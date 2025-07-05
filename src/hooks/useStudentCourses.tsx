@@ -74,7 +74,9 @@ const applyFilters = (
     }
 
     // Price filters
-    const price = parseFloat(course.course_price?.price || "0");
+    const price = course.course_price?.price
+      ? parseFloat(course.course_price.price)
+      : 0;
     if (filters.min_price !== undefined && price < filters.min_price) {
       return false;
     }

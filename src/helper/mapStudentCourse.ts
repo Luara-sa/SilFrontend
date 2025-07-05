@@ -11,20 +11,22 @@ export const mapStudentCourseToCourseLegacy = (studentCourse: StudentCourse): Co
     ar: studentCourse.name, // Using the same name for both languages for now
   };
 
-  // Convert price string to number
-  const originalPrice = parseFloat(studentCourse.course_price.price) || 0;
-  const discountedPrice = studentCourse.course_price.discounted_price 
+  // Convert price string to number - handle null course_price
+  const originalPrice = studentCourse.course_price?.price 
+    ? parseFloat(studentCourse.course_price.price) || 0 
+    : 0;
+  const discountedPrice = studentCourse.course_price?.discounted_price 
     ? parseFloat(studentCourse.course_price.discounted_price) 
     : null;
   
   // Use discounted price if available, otherwise original price
   const finalPrice = discountedPrice || originalPrice;
-  const currency = studentCourse.course_price.currency;
+  const currency = studentCourse.course_price?.currency || 'SAR';
 
   return {
     id: studentCourse.id,
     course_id: studentCourse.id, // Using the same ID
-    discount: discountedPrice ? ((originalPrice - discountedPrice) / originalPrice) * 100 : 0,
+    discount: discountedPrice && originalPrice > 0 ? ((originalPrice - discountedPrice) / originalPrice) * 100 : 0,
     hours: studentCourse.duration,
     image: studentCourse.thumbnail,
     level: undefined, // Not provided in new API
