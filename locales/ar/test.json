@@ -1,0 +1,17 @@
+{
+  "test": "الإختبار",
+  "exprimental": "الإختبار التجريبي",
+  "address": "العنوان",
+  "submit": "تأكيد",
+  "reset": "Reset",
+  "done": "تم",
+  "cancel": "إلغاء",
+  "yes": "نعم",
+  "are you sure you want to leave?": "هل انت متاكد انك تريد ان تغادر؟",
+  "unsaved changes will be lost": "ستفقد التغييرات غير المحفوظة",
+  "test completed": "اكتمل الاختبار",
+  "your mark is": "علامتك",
+  "you should be logged in": "يجب عليك تسجيل الدخول ؟ ",
+  "do you want logged in": "هل تريد تسجيل الدخول",
+  "no": "لا"
+}

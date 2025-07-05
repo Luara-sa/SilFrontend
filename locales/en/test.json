@@ -1,0 +1,17 @@
+{
+  "test": "Test",
+  "exprimental": "Exprimental Test",
+  "address": "Adress",
+  "submit": "Submit",
+  "reset": "Reset",
+  "done": "Done",
+  "cancel": "Cancel",
+  "yes": "Yes",
+  "are you sure you want to leave?": "Are you sure you want to leave?",
+  "unsaved changes will be lost": "Unsaved changes will be lost",
+  "test completed": "Test Completed",
+  "your mark is": "Your Mark Is",
+  "you should be logged in": "You should be logged in to continue",
+  "do you want logged in": "Do You Want To Login ?",
+  "no": "No"
+}
