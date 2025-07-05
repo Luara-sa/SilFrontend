@@ -240,13 +240,13 @@ const StudentCourseDetailsPage = () => {
                     variant="outlined"
                   />
                   <Chip label={courseData.delivery_mode} variant="outlined" />
-                  {courseData.course_setting.is_free === 1 && (
+                  {courseData.course_setting?.is_free === 1 && (
                     <Chip label="Free" color="success" />
                   )}
-                  {courseData.course_setting.is_live === 1 && (
+                  {courseData.course_setting?.is_live === 1 && (
                     <Chip label="Live" color="error" />
                   )}
-                  {courseData.course_setting.is_upcoming === 1 && (
+                  {courseData.course_setting?.is_upcoming === 1 && (
                     <Chip label="Upcoming" color="warning" />
                   )}
                 </Box>
@@ -270,7 +270,8 @@ const StudentCourseDetailsPage = () => {
                 {/* Price Card */}
                 <Card variant="outlined" sx={{ p: 3, textAlign: "center" }}>
                   <Box sx={{ mb: 2 }}>
-                    {courseData.course_setting.is_free === 1 ? (
+                    {courseData.course_setting?.is_free === 1 ||
+                    !courseData.course_price ? (
                       <Typography
                         variant="h3"
                         color="success.main"

@@ -31,19 +31,61 @@ class CourseService {
   getStudentCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
     const url = `student/courses?page=${page}&per_page=${perPage}`;
     
-    return _axios.get<StudentCoursesResponse>(url).then((res) => {
+    return _axios.get<any>(url).then((res) => {
+      // The axios response.data should already be the structured response
       return res.data;
     }).catch((error) => {
-      throw error;
+      // Return error in expected format
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch courses',
+        data: {
+          content: [],
+          pagination: {
+            current_page: 1,
+            from: 0,
+            last_page: 1,
+            per_page: 15,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
     });
   }
 
   // Method to fetch all courses for frontend filtering
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
-    return _axios.get<StudentCoursesResponse>('student/courses?per_page=1000').then((res) => {
+    return _axios.get<any>('student/courses?per_page=1000').then((res) => {
+      // The axios response.data should already be the structured response
       return res.data;
     }).catch((error) => {
-      throw error;
+      // Return error in expected format
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch courses',
+        data: {
+          content: [],
+          pagination: {
+            current_page: 1,
+            from: 0,
+            last_page: 1,
+            per_page: 1000,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
     });
   }
 
@@ -96,6 +138,26 @@ class CourseService {
     const url = `student/courses/${id}/curriculum`;
     
     return _axios.get<CourseCurriculumResponse>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Methods specifically for My Courses (enrolled courses)
+  getMyEnrolledCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
+    const url = `student/my-courses?page=${page}&per_page=${perPage}`;
+    
+    return _axios.get<StudentCoursesResponse>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // Method to get all my enrolled courses for pagination
+  getAllMyEnrolledCourses(): Promise<StudentCoursesResponse> {
+    return _axios.get<StudentCoursesResponse>('student/my-courses?per_page=1000').then((res) => {
       return res.data;
     }).catch((error) => {
       throw error;

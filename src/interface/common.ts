@@ -616,8 +616,8 @@ export interface DetailedStudentCourseResponse {
       price: string;
       currency: string;
       discounted_price: string | null;
-    };
-    course_setting: {
+    } | null;
+    course_setting?: {
       is_free: number;
       is_upcoming: number;
       is_live: number;
