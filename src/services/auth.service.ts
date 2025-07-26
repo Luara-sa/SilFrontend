@@ -4,15 +4,31 @@ import { _axios } from "interceptors/http-config";
 import { AxiosResponse } from "axios";
 import { RootObj } from "interface/common";
 import { IMe } from "store/meStore";
+import { JwtUtils } from "utils/jwtUtils";
 // import { me, RootObj } from "interfaces/common";
 
 const { NEXT_APP_TOKEN_KEY } = process.env;
 
 class AuthService {
   private static _instance: AuthService;
+  private logoutCallbacks: (() => void)[] = [];
 
   public static get Instance() {
     return this._instance || (this._instance = new this());
+  }
+
+  /**
+   * Add callback to be executed on logout
+   */
+  addLogoutCallback(callback: () => void) {
+    this.logoutCallbacks.push(callback);
+  }
+
+  /**
+   * Remove logout callback
+   */
+  removeLogoutCallback(callback: () => void) {
+    this.logoutCallbacks = this.logoutCallbacks.filter(cb => cb !== callback);
   }
 
   login(data: any): Promise<AxiosResponse<RootObj<any>>> {
@@ -28,11 +44,7 @@ class AuthService {
 
   register(data: any): Promise<AxiosResponse<any, any>> {
     return _axios.post<any>(`student/register`, data).then((res: any) => {
-  
-      // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
-      if (res.data.data && res.data.data.token) {
-        this.doLogin(res.data.data.token);
-      }
+      // Don't auto-login on registration - user needs to verify email first
       return res;
     });
   }
@@ -66,6 +78,20 @@ class AuthService {
     return _axios
       .post<any>(`resendConfirmAccountCode`, data)
       .then((res: any) => (res.data as any).result);
+  }
+
+  // New email verification methods for updated API
+  verifyEmail(verifyEmailToken: string, data: { email: string; code: string }): Promise<AxiosResponse<any>> {
+    return _axios.post<any>(`student/verify-email`, data, {
+      headers: {
+        token: verifyEmailToken
+      }
+    }).then((res: any) => res.data);
+  }
+
+  resendVerificationCode(email: string): Promise<AxiosResponse<any>> {
+    return _axios.post<any>(`student/resend-verification-code`, { email })
+      .then((res: any) => res.data);
   }
 
   updateProfile(data: any): Promise<AxiosResponse<any>> {
@@ -106,16 +132,99 @@ class AuthService {
     });
   }
 
-  isLoggedIn() {
+  /**
+   * Enhanced authentication check with token validation
+   */
+  isLoggedIn(): boolean {
+    const token = this.getJwtToken();
+    if (!token) return false;
+    
+    // Validate token format
+    if (!JwtUtils.isValidTokenFormat(token)) {
+      console.warn('Invalid token format detected, logging out...');
+      this.doLogout();
+      return false;
+    }
+    
+    // Check if token is expired (only for JWT tokens)
+    if (JwtUtils.isJwtToken(token) && JwtUtils.isTokenExpired(token)) {
+      console.warn('Token expired, logging out...');
+      this.doLogout();
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Check if token exists without validation (for initial app load)
+   */
+  hasToken(): boolean {
     return Boolean(this.getJwtToken());
   }
 
+  /**
+   * Check if token will expire soon
+   * For Sanctum tokens, this will always return false since they don't have expiration info
+   */
+  willTokenExpireSoon(bufferTimeSeconds: number = 300): boolean {
+    const token = this.getJwtToken();
+    if (!token) return true;
+    
+    // For Sanctum tokens, we can't check expiration client-side
+    if (JwtUtils.isSanctumToken(token)) {
+      return false;
+    }
+    
+    return JwtUtils.willTokenExpireSoon(token, bufferTimeSeconds);
+  }
+
+  /**
+   * Get token expiration date
+   * Returns null for Sanctum tokens since they don't contain expiration info
+   */
+  getTokenExpiration(): Date | null {
+    const token = this.getJwtToken();
+    if (!token) return null;
+    
+    const expirationTime = JwtUtils.getTokenExpiration(token);
+    return expirationTime ? new Date(expirationTime) : null;
+  }
+
+  /**
+   * Enhanced logout with comprehensive cleanup
+   */
   doLogout() {
+    // Execute all registered logout callbacks
+    this.logoutCallbacks.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error executing logout callback:', error);
+      }
+    });
+
     this.destroyTokens();
     // Clear user data (async but don't wait for it to avoid blocking logout)
     this.clearAllUserData().catch((error) => {
       console.error("Error during comprehensive logout cleanup:", error);
     });
+  }
+
+  /**
+   * Force logout with redirect (for expired tokens)
+   */
+  forceLogout(reason: string = 'Token expired') {
+    console.warn(`Force logout: ${reason}`);
+    this.doLogout();
+    
+    // Redirect to login page if we're not already there
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/auth/login') && !currentPath.startsWith('/auth/')) {
+        window.location.href = '/auth/login';
+      }
+    }
   }
 
   // Debug method to check current localStorage state (for testing)
@@ -127,7 +236,17 @@ class AuthService {
   }
 
   doLogin(token: any, user?: any) {
+    // Validate token before storing
+    if (!JwtUtils.isValidTokenFormat(token)) {
+      throw new Error('Invalid token format');
+    }
+    
+    if (JwtUtils.isTokenExpired(token)) {
+      throw new Error('Token is already expired');
+    }
+    
     this.storeTokens(token);
+    console.log('Token stored in AuthService:', !!this.getJwtToken());
   }
 
   getJwtToken() {
@@ -137,14 +256,73 @@ class AuthService {
     return null;
   }
 
+  /**
+   * Store token securely using both localStorage and httpOnly cookies when possible
+   */
   private storeTokens(token: any) {
-    localStorage.setItem(NEXT_APP_TOKEN_KEY ?? "token", token);
+    const tokenKey = NEXT_APP_TOKEN_KEY ?? "token";
+    
+    // Store in localStorage for client-side access
+    localStorage.setItem(tokenKey, token);
+    
+    // Also try to store in httpOnly cookie via API call for enhanced security
+    this.storeTokenInCookie(token).catch(error => {
+      console.warn('Failed to store token in httpOnly cookie:', error);
+      // Continue execution as localStorage storage is still available
+    });
+  }
+
+  /**
+   * Store token in httpOnly cookie via API endpoint
+   */
+  private async storeTokenInCookie(token: string): Promise<void> {
+    try {
+      const response = await fetch('/api/auth/set-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+        credentials: 'include', // Include cookies in the request
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to store token in cookie: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error storing token in cookie:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear token from httpOnly cookie via API endpoint
+   */
+  private async clearTokenFromCookie(): Promise<void> {
+    try {
+      const response = await fetch('/api/auth/clear-token', {
+        method: 'POST',
+        credentials: 'include', // Include cookies in the request
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to clear token from cookie: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error clearing token from cookie:', error);
+      // Don't throw error as localStorage clearing is more important
+    }
   }
 
   private destroyTokens() {
     localStorage.removeItem(NEXT_APP_TOKEN_KEY ?? "token");
     // Clear user data from localStorage
     localStorage.removeItem('user_data');
+    
+    // Clear httpOnly cookie
+    this.clearTokenFromCookie().catch(error => {
+      console.warn('Failed to clear token from httpOnly cookie:', error);
+    });
   }
 
   private async clearAllUserData() {
@@ -319,6 +497,7 @@ class AuthService {
     } catch (err: any) {
       if (err.response?.status === 401) {
         console.warn("Profile fetch failed: User not authenticated");
+        this.forceLogout('Authentication failed during profile fetch');
       } else if (err.response?.status === 403) {
         console.warn("Profile fetch failed: Access forbidden");
       } else {

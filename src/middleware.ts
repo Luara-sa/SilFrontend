@@ -1,39 +1,169 @@
-// import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { JwtUtils } from "utils/jwtUtils";
 
-// export function middleware(request: NextRequest) {
-//   if (request.nextUrl.pathname.startsWith("/about")) {
-//     // This logic is only applied to /about
-//   }
+// Define protected and public routes
+const publicRoutes = [
+  '/',
+  '/auth/login',
+  '/auth/signup',
+  '/auth/forget-password',
+  '/auth/reset-password',
+  '/auth/verfiy-account',
+  '/contact-us',
+  '/privacy-policy',
+  '/terms-of-service',
+];
 
-//   if (request.nextUrl.pathname.startsWith("/auth")) {
-//     return ShouldNotBeLogged(request);
-//   }
+const protectedRoutes = [
+  '/profile',
+  '/courses',
+  '/checkout',
+  '/placement-test',
+  '/test',
+];
 
-//   if (request.nextUrl.pathname.startsWith("/needlogin")) {
-//     return ShouldBeLogged(request);
-//   }
-// }
+const authRoutes = [
+  '/auth/login',
+  '/auth/signup',
+  '/auth/forget-password',
+  '/auth/reset-password',
+  '/auth/verfiy-account',
+];
 
-// function ShouldBeLogged(request: NextRequest) {
-//   const { origin } = request.nextUrl;
-//   const isLogged = Boolean(request.cookies.get("token"));
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const { origin } = request.nextUrl;
+  
+  // Get token from cookies (preferred) or localStorage (fallback)
+  const cookieToken = request.cookies.get("token");
+  
+  // Check if the current path is a protected route
+  const isProtectedRoute = protectedRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+  
+  // Check if the current path is an auth route
+  const isAuthRoute = authRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+  
+  // Check if the current path is a public route
+  const isPublicRoute = publicRoutes.some(route => 
+    pathname === route || pathname.startsWith(route)
+  );
 
-//   if (isLogged) {
-//     return NextResponse.next();
-//   } else {
-//     return NextResponse.redirect(`${origin}/signin`);
-//   }
-// }
+  // Handle API routes - skip middleware for API routes
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
 
-// function ShouldNotBeLogged(request: NextRequest) {
-//   const { origin } = request.nextUrl;
-//   const isLogged = Boolean(request.cookies.get("token"));
+  // Handle static files and assets - skip middleware
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/static/') ||
+    pathname.includes('.') // Files with extensions
+  ) {
+    return NextResponse.next();
+  }
 
-//   if (!isLogged) {
-//     return NextResponse.next();
-//   } else {
-//     return NextResponse.redirect(`${origin}/`);
-//   }
-// }
+  // Token validation function
+  const isValidToken = (token: string | undefined): boolean => {
+    if (!token) return false;
+    
+    try {
+      // Check token format
+      if (!JwtUtils.isValidTokenFormat(token)) {
+        return false;
+      }
+      
+      // Check if token is expired
+      if (JwtUtils.isTokenExpired(token)) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  };
 
-export function middleware() {}
+  const hasValidToken = isValidToken(cookieToken);
+
+  // Handle protected routes  
+  if (isProtectedRoute) {
+    // TEMPORARY DEV BYPASS: In development, be more permissive
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.next();
+    }
+    
+    if (!hasValidToken) {
+      // Store only the pathname (not full URL) to redirect back after login
+      const returnPath = pathname + (request.nextUrl.search || '');
+      const loginUrl = new URL('/auth/login', origin);
+      loginUrl.searchParams.set('returnUrl', returnPath);
+      
+      return NextResponse.redirect(loginUrl);
+    }
+    
+    // Token is valid, allow access
+    return NextResponse.next();
+  }
+
+  // Handle auth routes - redirect authenticated users away from auth pages
+  if (isAuthRoute) {
+    if (hasValidToken) {
+      // Check if there's a return URL
+      const returnUrl = request.nextUrl.searchParams.get('returnUrl');
+      if (returnUrl) {
+        try {
+          // returnUrl is now just a path, so validate it's a safe internal path
+          if (returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+            return NextResponse.redirect(new URL(returnUrl, origin));
+          }
+        } catch (error) {
+          console.error('Invalid return URL:', error);
+        }
+      }
+      
+      // Default redirect to home
+      return NextResponse.redirect(new URL('/', origin));
+    }
+    
+    // User not authenticated, allow access to auth pages
+    return NextResponse.next();
+  }
+
+  // Handle public routes
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  // Default behavior for unspecified routes
+  // You might want to treat unknown routes as protected or public based on your needs
+  if (!hasValidToken) {
+    // Treat unknown routes as protected by default
+    const returnPath = pathname + (request.nextUrl.search || '');
+    const loginUrl = new URL('/auth/login', origin);
+    loginUrl.searchParams.set('returnUrl', returnPath);
+    
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
+// Configure which routes should be processed by middleware
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (public directory)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|public|assets).*)',
+  ],
+};

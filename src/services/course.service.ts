@@ -144,6 +144,39 @@ class CourseService {
     });
   }
 
+  // NEW: Method to get video topic content
+  getVideoTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
+    const url = `student/courses/${courseId}/curriculum/video/chapters/${chapterId}/topics/${topicId}`;
+    
+    return _axios.get<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Method to get reading topic content
+  getReadingTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
+    const url = `student/courses/${courseId}/curriculum/reading/chapters/${chapterId}/topics/${topicId}`;
+    
+    return _axios.get<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Generic method to get topic content based on type
+  getTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number, topicType: 'video' | 'reading'): Promise<any> {
+    if (topicType === 'video') {
+      return this.getVideoTopicContent(courseId, chapterId, topicId);
+    } else if (topicType === 'reading') {
+      return this.getReadingTopicContent(courseId, chapterId, topicId);
+    } else {
+      throw new Error(`Unsupported topic type: ${topicType}`);
+    }
+  }
+
   // NEW: Methods specifically for My Courses (enrolled courses)
   getMyEnrolledCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
     const url = `student/my-courses?page=${page}&per_page=${perPage}`;

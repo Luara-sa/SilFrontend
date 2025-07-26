@@ -28,9 +28,21 @@ const VerfiyAccount = () => {
   const [loading, setLoading] = useState(false);
   const [resendCode, setResendCode] = useState<boolean>(false);
   const [email, setEmail] = useState<any>();
+  const [verifyEmailToken, setVerifyEmailToken] = useState<string>("");
 
   useEffect(() => {
     setEmail(router.query.email);
+
+    // Get verify_email_token from localStorage
+    const storedToken = localStorage.getItem("verify_email_token");
+    if (storedToken) {
+      setVerifyEmailToken(storedToken);
+    } else {
+      // If no token found, redirect back to login
+      console.warn("No verification token found, redirecting to login");
+      router.push("/auth/login");
+    }
+
     return () => {};
   }, [router]);
   const validationSchema = Yup.object().shape({
@@ -43,37 +55,109 @@ const VerfiyAccount = () => {
   const DeviceSize = useDeviceSize();
 
   function SubmitHandler(input: any) {
+    if (!verifyEmailToken) {
+      eventEmitter.emit("enqueueSnackbar", {
+        message: "Verification token not found. Please try logging in again.",
+        snack: {
+          variant: "error",
+          autoHideDuration: 3000,
+          preventDuplicate: true,
+        },
+      });
+      return;
+    }
+
     setLoading(true);
 
     _AuthService
-      .confirmAccount({
+      .verifyEmail(verifyEmailToken, {
         code: input.code,
         email: email,
       })
       .then((res) => {
-        console.log(res);
-        _AuthService.doLogin((res as any).access_token);
-        setMe(res as any);
+        console.log("Email verification response:", res);
+
+        // Clear verification data from localStorage
+        localStorage.removeItem("verify_email_token");
+        localStorage.removeItem("verification_email");
+
         eventEmitter.emit("enqueueSnackbar", {
-          message: "Account Activated Successfully.",
+          message: "Email verified successfully!",
           snack: {
             variant: "success",
             autoHideDuration: 3000,
             preventDuplicate: true,
           },
         });
-        router.push("/");
+
+        // Check if user is already authenticated (has valid token)
+        if (_AuthService.isLoggedIn()) {
+          console.log("User is authenticated, redirecting to main page");
+          router.push("/");
+        } else {
+          console.log("User not authenticated, redirecting to login");
+          router.push("/auth/login");
+        }
       })
-      .catch((err) => console.log(err))
+      .catch((err) => {
+        console.error("Email verification error:", err);
+        const errorMessage =
+          err?.response?.data?.message ||
+          "Verification failed. Please try again.";
+        eventEmitter.emit("enqueueSnackbar", {
+          message: errorMessage,
+          snack: {
+            variant: "error",
+            autoHideDuration: 3000,
+            preventDuplicate: true,
+          },
+        });
+      })
       .finally(() => setLoading(false));
   }
 
   const handleResendCode = () => {
+    if (!email) {
+      eventEmitter.emit("enqueueSnackbar", {
+        message: "Email not found. Please try again.",
+        snack: {
+          variant: "error",
+          autoHideDuration: 3000,
+          preventDuplicate: true,
+        },
+      });
+      return;
+    }
+
     setResendCode(true);
     _AuthService
-      .resendConfirmAccountCode({ email: email })
-      .then((res) => console.log(res))
-      .catch((err) => console.log(err));
+      .resendVerificationCode(email)
+      .then((res) => {
+        console.log("Resend verification code response:", res);
+        eventEmitter.emit("enqueueSnackbar", {
+          message: "Verification code sent successfully!",
+          snack: {
+            variant: "success",
+            autoHideDuration: 3000,
+            preventDuplicate: true,
+          },
+        });
+      })
+      .catch((err) => {
+        console.error("Resend verification code error:", err);
+        const errorMessage =
+          err?.response?.data?.message ||
+          "Failed to resend code. Please try again.";
+        eventEmitter.emit("enqueueSnackbar", {
+          message: errorMessage,
+          snack: {
+            variant: "error",
+            autoHideDuration: 3000,
+            preventDuplicate: true,
+          },
+        });
+        setResendCode(false); // Reset resend state on error
+      });
   };
 
   return (

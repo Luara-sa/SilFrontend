@@ -19,6 +19,7 @@ import { ar } from "yup-locales";
 import { meStore } from "store/meStore";
 import { _AuthService } from "services/auth.service";
 import { InterceptorProvider } from "interceptors1/InterceptorProvider";
+import { AuthProvider } from "contexts/AuthContext";
 
 import { Layout } from "components/layout";
 
@@ -90,36 +91,7 @@ const App: NextComponentType<NextPageContext, {}, AppProps> = ({
 
   useEffect(() => {
     document.body.style.overflowY = "overlay";
-
-    // Check if user has a valid token and restore their state
-    if (_AuthService.isLoggedIn()) {
-      // If token exists, restore user state
-      const userDataFromStorage = localStorage.getItem("user_data");
-      if (userDataFromStorage) {
-        try {
-          const userData = JSON.parse(userDataFromStorage);
-          setMe(userData);
-        } catch (error) {
-          console.error("Error parsing user data from storage:", error);
-          // If user data is corrupted, logout
-          _AuthService.doLogout();
-        }
-      } else {
-        // Token exists but no user data - create minimal user state
-        setMe({
-          user: null,
-          role: ["student"],
-          info_system: {
-            english_level_enum: [],
-            document_type_enum: {},
-            vat_value: { vat: 0 },
-          },
-        });
-      }
-    } else {
-      _AuthService.doLogout();
-    }
-  }, [setMe]);
+  }, []);
 
   return (
     <>
@@ -134,21 +106,26 @@ const App: NextComponentType<NextPageContext, {}, AppProps> = ({
           <QueryClientProvider client={queryClient}>
             <SnackbarProvider
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              maxSnack={3}
+              autoHideDuration={3000}
+              preventDuplicate
             >
-              <InterceptorProvider>
-                <GoogleOAuthProvider clientId="801196929391-r8do46k5fqrn2eifrd1333hgphkh2n0b.apps.googleusercontent.com">
-                  <>
-                    {/* <LocalizationProvider dateAdapter={AdapterDateFns}> */}
-                    <LayoutFinal>
-                      <Component {...pageProps} />
-                    </LayoutFinal>
-                    {/* </LocalizationProvider> */}
-                    {/* {process.env.NODE_ENV !== "production" && (
-                    <ReactQueryDevtools />
-                  )} */}
-                  </>
-                </GoogleOAuthProvider>
-              </InterceptorProvider>
+              <AuthProvider>
+                <InterceptorProvider>
+                  <GoogleOAuthProvider clientId="801196929391-r8do46k5fqrn2eifrd1333hgphkh2n0b.apps.googleusercontent.com">
+                    <>
+                      {/* <LocalizationProvider dateAdapter={AdapterDateFns}> */}
+                      <LayoutFinal>
+                        <Component {...pageProps} />
+                      </LayoutFinal>
+                      {/* </LocalizationProvider> */}
+                      {/* {process.env.NODE_ENV !== "production" && (
+                      <ReactQueryDevtools />
+                    )} */}
+                    </>
+                  </GoogleOAuthProvider>
+                </InterceptorProvider>
+              </AuthProvider>
             </SnackbarProvider>
           </QueryClientProvider>
         </ThemeProvider>

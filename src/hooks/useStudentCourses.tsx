@@ -564,3 +564,60 @@ export const useCourseCurriculum = (courseId: string | number | null) => {
     refetch,
   };
 };
+
+// NEW: Hook for fetching detailed topic content
+export const useTopicContent = (
+  courseId: string | number | null,
+  chapterId: string | number | null,
+  topicId: string | number | null,
+  topicType: "video" | "reading" | null
+) => {
+  const [topicContent, setTopicContent] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTopicContent = useCallback(async () => {
+    if (!courseId || !chapterId || !topicId || !topicType) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await _CourseService.getTopicContent(
+        courseId,
+        chapterId,
+        topicId,
+        topicType
+      );
+
+      if (response.status && response.data) {
+        setTopicContent(response.data);
+      } else {
+        setError(response.message || `Failed to fetch ${topicType} content`);
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          `An error occurred while fetching ${topicType} content`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId, chapterId, topicId, topicType]);
+
+  useEffect(() => {
+    fetchTopicContent();
+  }, [fetchTopicContent]);
+
+  const refetch = useCallback(() => {
+    fetchTopicContent();
+  }, [fetchTopicContent]);
+
+  return {
+    topicContent,
+    loading,
+    error,
+    refetch,
+  };
+};

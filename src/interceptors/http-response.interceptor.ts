@@ -2,8 +2,8 @@ import { _axios as Axios } from "./http-config";
 import { _AuthService } from "services/auth.service";
 
 interface HttpResponseInterceptorProps {
-  navigate?: any;
-  enqueueSnackbar?: any;
+  enqueueSnackbar: any;
+  navigate: any;
 }
 
 export const HttpResponseInterceptor = ({
@@ -50,11 +50,32 @@ export const HttpResponseInterceptor = ({
       const originalRequest = error?.config;
 
       switch (error?.response?.status) {
-        case 402:
-          _AuthService.doLogout();
-          // navigate("/");
+        // Handle unauthorized access (token expired/invalid)
+        case 401:
+          console.warn('401 Unauthorized: Token expired or invalid');
+          enqueueSnackbar('Session expired. Please log in again.', {
+            variant: "warning",
+            autoHideDuration: 3000,
+          });
+          _AuthService.forceLogout('Token expired or invalid (401)');
           break;
 
+        // Handle forbidden access
+        case 403:
+          console.warn('403 Forbidden: Access denied');
+          enqueueSnackbar('Access denied. Please contact support if this is unexpected.', {
+            variant: "error",
+            autoHideDuration: 5000,
+          });
+          break;
+
+        // Legacy logout codes (keeping for backward compatibility)
+        case 402:
+          console.warn('402 Payment Required: Forcing logout');
+          _AuthService.doLogout();
+          break;
+
+        // Handle validation errors
         case 405:
           Object.keys(error.response.data.message).map((key) =>
             enqueueSnackbar(error.response.data.message[key], {
@@ -64,11 +85,66 @@ export const HttpResponseInterceptor = ({
           );
           break;
 
+        // Handle unprocessable entity (validation errors)
+        case 422:
+          if (error.response.data?.errors) {
+            Object.keys(error.response.data.errors).forEach((key) => {
+              const errorMessages = error.response.data.errors[key];
+              if (Array.isArray(errorMessages)) {
+                errorMessages.forEach((message) => {
+                  enqueueSnackbar(message, {
+                    variant: "error",
+                    autoHideDuration: 3000,
+                    preventDuplicate: true,
+                  });
+                });
+              }
+            });
+          } else if (error.response.data?.message) {
+            enqueueSnackbar(error.response.data.message, {
+              variant: "error",
+              autoHideDuration: 3000,
+            });
+          }
+          break;
+
+        // Handle server errors
+        case 500:
+          enqueueSnackbar('Server error occurred. Please try again later.', {
+            variant: "error",
+            autoHideDuration: 5000,
+          });
+          break;
+
+        // Handle service unavailable
+        case 503:
+          enqueueSnackbar('Service temporarily unavailable. Please try again later.', {
+            variant: "warning",
+            autoHideDuration: 5000,
+          });
+          break;
+
+        // Handle rate limiting
+        case 429:
+          enqueueSnackbar('Too many requests. Please wait a moment before trying again.', {
+            variant: "warning",
+            autoHideDuration: 5000,
+          });
+          break;
+
         default:
-          // enqueueSnackbar(error.response.data.message, {
-          //   variant: "error",
-          //   autoHideDuration: 3000,
-          // });
+          // Only show generic error message for unexpected errors
+          if (error.response?.data?.message) {
+            enqueueSnackbar(error.response.data.message, {
+              variant: "error",
+              autoHideDuration: 3000,
+            });
+          } else if (error.message && error.message !== 'Network Error') {
+            enqueueSnackbar(error.message, {
+              variant: "error",
+              autoHideDuration: 3000,
+            });
+          }
           break;
       }
 

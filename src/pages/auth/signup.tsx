@@ -101,25 +101,42 @@ const Signup = () => {
       .register(cleanPayload)
       .then((res) => {
         console.log("Registration successful:", res);
-        // Handle new response structure: { status: true, message: "Success", data: { profile: {...}, token: "..." } }
+        // Handle new response structure: { status: true, message: "Success", data: { profile: {...}, token: "...", verify_email_token: "..." } }
+        const responseData = (res.data as any).data;
+        const { profile, token, verify_email_token } = responseData;
+
+        // Store user data and token even for unverified users
         const userData = {
-          user: (res.data as any).data.profile,
-          token: (res.data as any).data.token,
-          role: ["student"], // Default role for now
+          user: profile,
+          token: token,
+          role: ["student"],
           info_system: {
-            // Mock info_system structure to prevent loading state
             english_level_enum: [],
             document_type_enum: {},
             vat_value: { vat: 0 },
           },
         };
-        setMe(userData);
 
-        // Save user data to localStorage for persistence
+        // Store user data for after verification
+        setMe(userData);
         localStorage.setItem("user_data", JSON.stringify(userData));
 
+        // Store token for authentication
+        if (token) {
+          _AuthService.doLogin(token);
+        }
+
+        // Store verify_email_token for verification process
+        if (verify_email_token) {
+          localStorage.setItem("verify_email_token", verify_email_token);
+        }
+
+        // Store user email for verification page
+        localStorage.setItem("verification_email", profile.email);
+
         eventEmitter.emit("enqueueSnackbar", {
-          message: "Registration successful! Welcome to SIL.",
+          message:
+            "Registration successful! Please verify your email to continue.",
           variant: "success",
           snack: {
             autoHideDuration: 3000,
@@ -127,8 +144,10 @@ const Signup = () => {
           },
         });
 
-        // Redirect to placement tests after successful registration
-        router.push("/placement-tests");
+        // Redirect to email verification page after successful registration
+        router.push(
+          `/auth/verfiy-account/${encodeURIComponent(profile.email)}`
+        );
       })
       .catch((err) => {
         console.error("Registration error:", err);
