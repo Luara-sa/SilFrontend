@@ -203,7 +203,9 @@ export const CourseCard = (props: Props) => {
         >
           <Link href={courseUrl}>
             <Button variant="default" sx={{ fontSize: [10, 10, 11, 12, 13] }}>
-              {t("reservation")}
+              {props.price && props.price > 0
+                ? t("view course")
+                : t("reservation")}
             </Button>
           </Link>
           <CoursePrice

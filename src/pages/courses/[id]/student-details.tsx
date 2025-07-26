@@ -149,6 +149,14 @@ const StudentCourseDetailsPage = () => {
   const handleEnrollment = async () => {
     if (!courseData) return;
 
+    // Check if course is paid, redirect to checkout
+    const isPaidCourse =
+      courseData.course_setting?.is_free !== 1 && courseData.course_price;
+    if (isPaidCourse) {
+      router.push(`/courses/${courseData.id}/checkout`);
+      return;
+    }
+
     // Check if group selection is required but not selected
     if (
       courseData.group_assignment_mode === "before_enroll" &&
@@ -448,11 +456,16 @@ const StudentCourseDetailsPage = () => {
                         onClick={handleEnrollment}
                         disabled={isEnrollmentDisabled()}
                         startIcon={
-                          enrollmentSuccess ? <CheckCircle /> : undefined
+                          enrollmentSuccess ? (
+                            <CheckCircle />
+                          ) : courseData?.course_setting?.is_free !== 1 &&
+                            courseData?.course_price ? (
+                            <CheckCircle />
+                          ) : undefined
                         }
                       >
                         {enrollmentLoading
-                          ? "Enrolling..."
+                          ? "Processing..."
                           : enrollmentSuccess
                           ? "Enrolled Successfully!"
                           : courseData?.group_assignment_mode ===
@@ -460,6 +473,9 @@ const StudentCourseDetailsPage = () => {
                             courseData.groups.length > 0 &&
                             !selectedGroupId
                           ? "Select Group to Enroll"
+                          : courseData?.course_setting?.is_free !== 1 &&
+                            courseData?.course_price
+                          ? "Purchase Course"
                           : "Enroll Now"}
                       </Button>
                     </Box>
