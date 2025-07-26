@@ -71,6 +71,10 @@ class WithAuthService {
       .then((res: any) => res.data);
   }
 
+  getListOfNotifications(): Promise<RootObj<IndexObj2<Notification[]>>> {
+    return _axios.get<any>("student/notifications").then((res) => res.data);
+  }
+
   readNotification(data: {
     notification_id?: number;
     make_all_read?: number;

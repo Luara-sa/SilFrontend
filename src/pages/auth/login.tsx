@@ -39,6 +39,9 @@ import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import useDeviceSize from "hooks/useDeviceSize";
 import { useGoogleLogin } from "@react-oauth/google";
 
+import { useAuth } from "contexts/AuthContext";
+import { useGuestOnly } from "hooks/useProtectedRoute";
+
 const Login = () => {
   const { t } = useTranslation("auth");
 
@@ -73,13 +76,65 @@ const Login = () => {
   function LoginHandler(input: any) {
     setLoading(true);
     setError("");
+    console.log("Starting login process...");
+
     _AuthService
       .login(input)
       .then((res) => {
+        console.log("Login response received:", res.data);
+
         // Handle new response structure: { status: true, message: "...", data: { profile: {...}, token: "..." } }
+        const responseData = res.data as any;
+
+        if (!responseData.status) {
+          throw new Error(responseData.message || "Login failed");
+        }
+
+        const { profile, token, verify_email_token } = responseData.data;
+
+        if (!token) {
+          throw new Error("No token received from server");
+        }
+
+        console.log("Token received:", token);
+        console.log("Profile received:", profile);
+        console.log("Verify email token:", verify_email_token);
+
+        // Check if user email is verified
+        if (profile.is_verify === 0 || profile.is_verify === false) {
+          console.log("User email not verified, redirecting to verification page");
+          
+          // Store user data and token even for unverified users (they'll need it after verification)
+          const userData = {
+            user: profile,
+            token: token,
+            role: ["student"],
+            info_system: {
+              english_level_enum: [],
+              document_type_enum: {},
+              vat_value: { vat: 0 },
+            },
+          };
+          
+          // Store user data and token for after verification
+          login(userData.token, userData);
+          
+          // Store verify_email_token for verification process
+          if (verify_email_token) {
+            localStorage.setItem("verify_email_token", verify_email_token);
+          }
+          
+          // Store user email for verification page
+          localStorage.setItem("verification_email", profile.email);
+          
+          // Redirect to verification page
+          router.push(`/auth/verfiy-account/${encodeURIComponent(profile.email)}`);
+          return;
+        }
+
         const userData = {
-          user: (res.data as any).data.profile,
-          token: (res.data as any).data.token,
+          user: profile,
+          token: token,
           role: ["student"], // Default role for now
           info_system: {
             // Mock info_system structure to prevent loading state
@@ -88,10 +143,25 @@ const Login = () => {
             vat_value: { vat: 0 },
           },
         };
-        setMe(userData);
 
-        // Save user data to localStorage for persistence
-        localStorage.setItem("user_data", JSON.stringify(userData));
+        console.log("Calling auth context login with userData:", userData);
+
+        // Use the auth context login method instead of direct store manipulation
+        try {
+          login(userData.token, userData);
+          console.log("Auth context login completed successfully");
+        } catch (loginError) {
+          console.error("Auth context login failed:", loginError);
+          throw loginError;
+        }
+
+        // Verify token storage
+        console.log(
+          "Login successful - Token stored:",
+          !!localStorage.getItem("token")
+        );
+        console.log("User data stored:", !!localStorage.getItem("user_data"));
+        console.log("Auth service token check:", !!_AuthService.getJwtToken());
 
         // Fetch updated student profile data after successful login
         if (userData.role?.includes("student")) {
@@ -99,6 +169,7 @@ const Login = () => {
             .fetchAndUpdateStudentProfile(meStore)
             .then((updatedUser) => {
               if (updatedUser) {
+                console.log("Student profile updated successfully");
               }
             })
             .catch((err) => {
@@ -115,17 +186,51 @@ const Login = () => {
           autoHideDuration: 3000,
           preventDuplicate: true,
         });
-        // Redirect to placement tests after login
-        router.push("/placement-tests");
+
+        // Primary approach: Let useGuestOnly hook handle the redirect
+        console.log(
+          "Login successful - useGuestOnly hook should handle redirect"
+        );
+
+        // Fallback: If useGuestOnly doesn't redirect within 500ms, do manual redirect
+        const redirectTimeout = setTimeout(() => {
+          console.log(
+            "Fallback redirect triggered - useGuestOnly hook didn't redirect in time"
+          );
+          const returnUrl = router.query.returnUrl as string;
+          const redirectTarget =
+            returnUrl && returnUrl !== "/" && returnUrl !== "/auth/login"
+              ? returnUrl
+              : "/";
+          console.log("Fallback redirecting to:", redirectTarget);
+          router.push(redirectTarget);
+        }, 500);
+
+        // Clear the timeout if the component unmounts (redirect happened)
+        const cleanup = () => clearTimeout(redirectTimeout);
+        router.events.on("routeChangeStart", cleanup);
+
+        // Also clear it after a reasonable time
+        setTimeout(() => {
+          router.events.off("routeChangeStart", cleanup);
+          clearTimeout(redirectTimeout);
+        }, 1000);
       })
       .catch((err) => {
+        console.error("Login error:", err);
+
         if (err) {
-          if (err?.response?.data?.message === "error_email_or_password") {
+          if (
+            err?.response?.data?.message === "error_email_or_password" ||
+            err?.response?.data?.message === "Invalid login credentials"
+          ) {
             setError(t("error email or passowrd"));
           } else if (err?.response?.data?.message === "activate_account") {
             router.push(`/auth/verfiy-account/${input?.email}`);
           } else {
-            setError(err?.response?.data?.message);
+            const errorMessage =
+              err?.response?.data?.message || err.message || "Login failed";
+            setError(errorMessage);
           }
         }
       })
@@ -142,8 +247,13 @@ const Login = () => {
     event.preventDefault();
   };
 
+  // Use guest-only hook to redirect authenticated users
+  const { isLoading: guestCheckLoading } = useGuestOnly();
+  const { login } = useAuth();
+
   useLayoutEffect(() => {
-    _AuthService.isLoggedIn() && router.push("/");
+    // This check is now handled by useGuestOnly hook
+    // _AuthService.isLoggedIn() && router.push("/");
   }, []);
 
   const onGoogleAuth = useGoogleLogin({
@@ -167,10 +277,19 @@ const Login = () => {
               vat_value: { vat: 0 },
             },
           };
-          setMe(userData);
 
-          // Save user data to localStorage for persistence
+          // Use the auth context login method
+          login(userData.token, userData);
+
+          // Save user data to localStorage for persistence (backup)
           localStorage.setItem("user_data", JSON.stringify(userData));
+
+          // Verify token storage
+          console.log(
+            "Social login successful - Token stored:",
+            !!localStorage.getItem("token")
+          );
+          console.log("User data stored:", !!localStorage.getItem("user_data"));
 
           // Fetch updated student profile data after successful social login
           if (userData.role?.includes("student")) {
@@ -178,14 +297,26 @@ const Login = () => {
               .fetchAndUpdateStudentProfile(meStore)
               .then((updatedUser) => {
                 if (updatedUser) {
+                  // Profile updated successfully
                 }
               })
-              .catch((err) => {});
+              .catch((err) => {
+                console.warn(
+                  "Failed to update student profile after social login:",
+                  err
+                );
+              });
           }
 
-          router.push("/");
+          // Handle redirect after login
+          const returnUrl = router.query.returnUrl as string;
+          if (returnUrl && returnUrl !== "/") {
+            router.push(returnUrl);
+          } else {
+            router.push("/");
+          }
         })
-        .catch((err) => console.error(err));
+        .catch((err) => console.error("Social login error:", err));
     },
     onError: (error) => {
       eventEmitter.emit("enqueueSnackbar", {

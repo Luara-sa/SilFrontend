@@ -243,8 +243,8 @@ const CourseCurriculumPage = () => {
                           mb: 1,
                         }}
                         onClick={() => {
-                          // Handle topic click - navigate to topic page
-                          router.push(`/courses/${id}/topics/${topic.id}`);
+                          // Handle topic click - navigate to topic page with chapter context
+                          router.push(`/courses/${id}/topics/${topic.id}?chapterId=${chapter.id}&type=${topic.type}`);
                         }}
                       >
                         <ListItemIcon>{getTopicIcon(topic.type)}</ListItemIcon>

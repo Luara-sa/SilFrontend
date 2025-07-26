@@ -26,6 +26,7 @@ export const NotificationButton = () => {
     setAnchorEl(null);
   };
 
+  // TODO: uncomment this when we have the notification api
   useEffect(() => {
     // Get unseen notification count
     _WithAuthService

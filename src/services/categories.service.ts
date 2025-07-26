@@ -10,7 +10,7 @@ class CategoriesService {
   }
 
   getCategories(): Promise<RootObj<Category[]>> {
-    return _axios.get<any>(`getCategories`).then((res) => res.data);
+    return _axios.get<any>(`student/categories`).then((res) => res.data);
   }
 
   // New method for student categories API with pagination support
