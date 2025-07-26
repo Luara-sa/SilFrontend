@@ -99,7 +99,7 @@ export default _axios.interceptors.response.use(
         );
         if (error.config?.url === "https://api.moyasar.com/v1/payments") {
           const firstObjElment: keyof Error = Object.keys(
-            errorData?.errors
+            errorData?.errors || ""
           )[0] as unknown as keyof Error;
 
           eventEmitter.emit("enqueueSnackbar", {
