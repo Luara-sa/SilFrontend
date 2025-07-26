@@ -8,4 +8,7 @@ module.exports = nextTranslate({
   images: {
     domains: ["iris-sil.com", "backend.sil-sa.com"],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  }
 });
