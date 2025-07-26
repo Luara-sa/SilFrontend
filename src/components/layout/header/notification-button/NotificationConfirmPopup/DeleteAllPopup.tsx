@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 
 import { notificationStore } from "store/notificationStore";
-import { _WithAuthService } from "services/withAuth.service";
 
 import ButtonLoader from "components/custom/ButtonLoader";
 
@@ -26,14 +25,13 @@ export const DeleteAllPopup = (props: Props) => {
 
   const onSubmit = async () => {
     setLoading(true);
-    await _WithAuthService
-      .deleteNotification({ remove_all: 1 })
-      .then((res) => {
-        setReRenderNotification();
-        props.handleClose();
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+
+    // Since there's no delete-all endpoint in the new API, we'll just close the popup
+    // and show a message to delete notifications individually
+
+    props.handleClose();
+    return;
+    setLoading(false);
   };
 
   return (

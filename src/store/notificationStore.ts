@@ -30,7 +30,7 @@ export const notificationStore = create<NotificationStoreInterface>(
 
     setReRenderNotification: () =>
       set((state: NotificationStoreInterface) => ({
-        notifications: !state.reRenderNotification,
+        reRenderNotification: !state.reRenderNotification,
       })),
   })
 );

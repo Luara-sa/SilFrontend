@@ -686,12 +686,22 @@ export interface NotificationDataAfterParse {
 }
 
 export interface Notification {
-  created_at: Date;
-  data: string;
-  id: number;
-  is_read: number;
+  id: string;
+  title: string;
+  message: string;
+  meta_data: {
+    type: string;
+    meeting_url?: string;
+    meeting_password?: string;
+    [key: string]: any;
+  };
+  read_at: string | null;
+  created_at: string;
+  // Legacy fields for backward compatibility
+  data?: string;
+  is_read?: number;
   updated_at?: Date;
-  user_id: number;
+  user_id?: number;
 }
 
 export interface IPaymentMethodActive {

@@ -66,9 +66,35 @@ class WithAuthService {
   getNotificationsByToken(data?: {
     is_read?: 1 | 2;
   }): Promise<RootObj<IndexObj2<Notification[]>>> {
+    // Use the new student/notifications endpoint
     return _axios
-      .post<any>(`getNotificationsByToken`, data)
-      .then((res: any) => res.data);
+      .get<any>(`student/notifications`)
+      .then((res: any) => {
+        // Transform new API response to match old structure
+        const notifications = res.data.data.content;
+        
+        // Filter based on is_read parameter if provided
+        let filteredNotifications = notifications;
+        if (data?.is_read === 1) {
+          // Show only read notifications
+          filteredNotifications = notifications.filter((n: any) => n.read_at !== null);
+        } else if (data?.is_read === 2) {
+          // Show only unread notifications  
+          filteredNotifications = notifications.filter((n: any) => n.read_at === null);
+        }
+        
+        return {
+          success: res.data.status,
+          message: res.data.message,
+          result: {
+            data: filteredNotifications,
+            current_page: res.data.data.pagination?.current_page || 1,
+            last_page: res.data.data.pagination?.last_page || 1,
+            limit: res.data.data.pagination?.per_page || 10,
+            total: res.data.data.pagination?.total || filteredNotifications.length
+          }
+        };
+      });
   }
 
   getListOfNotifications(): Promise<RootObj<IndexObj2<Notification[]>>> {
@@ -76,21 +102,68 @@ class WithAuthService {
   }
 
   readNotification(data: {
-    notification_id?: number;
+    notification_id?: string;
     make_all_read?: number;
   }): Promise<RootObj<IndexObj2<any>>> {
-    return _axios
-      .post<any>(`readNotification`, data)
-      .then((res: any) => res.data);
+    if (data.make_all_read === 1) {
+      // Use new read-all endpoint
+      return _axios
+        .get<any>(`student/notifications/read-all`)
+        .then((res: any) => ({
+          success: res.data.status,
+          message: res.data.message,
+          result: {
+            data: res.data.data,
+            current_page: 1,
+            last_page: 1,
+            limit: 1,
+            total: 1
+          }
+        }));
+    } else if (data.notification_id) {
+      // Use new read specific notification endpoint
+      return _axios
+        .get<any>(`student/notifications/read/${data.notification_id}`)
+        .then((res: any) => ({
+          success: res.data.status,
+          message: res.data.message,
+          result: {
+            data: res.data.data,
+            current_page: 1,
+            last_page: 1,
+            limit: 1,
+            total: 1
+          }
+        }));
+    }
+    
+    return Promise.reject(new Error('Invalid notification read parameters'));
   }
 
   deleteNotification(data?: {
-    notification_id?: number;
+    notification_id?: string;
     remove_all?: number;
   }): Promise<RootObj<IndexObj2<any>>> {
-    return _axios
-      .post<any>(`deleteNotification`, data)
-      .then((res: any) => res.data);
+    if (data?.notification_id) {
+      // Use new delete specific notification endpoint
+      return _axios
+        .delete<any>(`student/notifications/delete/${data.notification_id}`)
+        .then((res: any) => ({
+          success: res.data.status,
+          message: res.data.message,
+          result: {
+            data: res.data.data,
+            current_page: 1,
+            last_page: 1,
+            limit: 1,
+            total: 1
+          }
+        }));
+    }
+    
+    // Note: There's no delete-all endpoint in the new API
+    // This will need to be handled differently or removed
+    return Promise.reject(new Error('Delete all notifications not supported in new API'));
   }
 
   getPaymentMethodActive(): Promise<RootObj<IPaymentMethodActive[]>> {
