@@ -490,6 +490,7 @@ export interface StudentCoursesResponse {
 
 // Student Courses Filter Interfaces
 export interface StudentCoursesFilters {
+  // Existing filters
   category_id?: number;
   mode?: "location" | "hybrid" | "online";
   learning_structure?: "structured" | "unstructured";
@@ -501,6 +502,28 @@ export interface StudentCoursesFilters {
   max_duration?: number;
   instructor_id?: number;
   search?: string;
+  
+  // Comprehensive new filters based on API spec
+  target_audience_id?: number;
+  is_free?: boolean;
+  is_paid?: boolean;
+  rating?: number; // Specific rating value (different from min_rating)
+  level_id?: number;
+  created_this_week?: boolean;
+  created_this_month?: boolean;
+  created_this_year?: boolean;
+  
+  // Price range as nested object to match API format
+  price?: {
+    min?: number;
+    max?: number;
+  };
+  
+  // Duration range as nested object to match API format
+  duration?: {
+    min?: number;
+    max?: number;
+  };
 }
 
 export interface PaginationParams {

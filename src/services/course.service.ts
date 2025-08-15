@@ -1,7 +1,7 @@
 import { Result } from "./../interface/test";
 import axios, { AxiosResponse } from "axios";
 import { _axios } from "interceptors/http-config";
-import { Course, IndexObj, Path, IndexObj2, RootObj, StudentCoursesResponse, StudentCourseDetailsResponse, DetailedStudentCourseResponse, CourseEnrollmentRequest, CourseEnrollmentResponse, CourseEnrollmentStatusResponse, CourseCurriculumResponse } from "interface/common";
+import { Course, IndexObj, Path, IndexObj2, RootObj, StudentCoursesResponse, StudentCourseDetailsResponse, DetailedStudentCourseResponse, CourseEnrollmentRequest, CourseEnrollmentResponse, CourseEnrollmentStatusResponse, CourseCurriculumResponse, StudentCoursesFilters } from "interface/common";
 
 class CourseService {
   private static _instance: CourseService;
@@ -59,7 +59,7 @@ class CourseService {
     });
   }
 
-  // Method to fetch all courses for frontend filtering
+  // Method to fetch all courses for frontend filtering (legacy)
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
     return _axios.get<any>('student/courses?per_page=1000').then((res) => {
       // The axios response.data should already be the structured response
@@ -76,6 +76,154 @@ class CourseService {
             from: 0,
             last_page: 1,
             per_page: 1000,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
+    });
+  }
+
+  // Method to fetch courses with comprehensive backend filtering
+  getStudentCoursesWithFilters(
+    page: number = 1,
+    perPage: number = 15,
+    filters?: StudentCoursesFilters
+  ): Promise<StudentCoursesResponse> {
+    // Build query parameters based on filters
+    const queryParams = new URLSearchParams();
+    
+    // Basic pagination
+    queryParams.append('page', page.toString());
+    queryParams.append('per_page', perPage.toString());
+    
+    if (filters) {
+      // Search filter
+      if (filters.search) {
+        queryParams.append('filters[search]', filters.search);
+      }
+      
+      // Category filter
+      if (filters.category_id) {
+        queryParams.append('filters[category_id]', filters.category_id.toString());
+      }
+      
+      // Target audience filter
+      if (filters.target_audience_id) {
+        queryParams.append('filters[target_audience_id]', filters.target_audience_id.toString());
+      }
+      
+      // Free/Paid filters
+      if (filters.is_free !== undefined) {
+        queryParams.append('filters[is_free]', filters.is_free ? '1' : '0');
+      }
+      
+      if (filters.is_paid !== undefined) {
+        queryParams.append('filters[is_paid]', filters.is_paid ? '1' : '0');
+      }
+      
+      // Price range filters
+      if (filters.price?.min !== undefined) {
+        queryParams.append('filters[price][min]', filters.price.min.toString());
+      }
+      
+      if (filters.price?.max !== undefined) {
+        queryParams.append('filters[price][max]', filters.price.max.toString());
+      }
+      
+      // Legacy price filters (fallback)
+      if (filters.min_price !== undefined && !filters.price?.min) {
+        queryParams.append('filters[price][min]', filters.min_price.toString());
+      }
+      
+      if (filters.max_price !== undefined && !filters.price?.max) {
+        queryParams.append('filters[price][max]', filters.max_price.toString());
+      }
+      
+      // Rating filter
+      if (filters.rating !== undefined) {
+        queryParams.append('filters[rating]', filters.rating.toString());
+      }
+      
+      // Duration range filters
+      if (filters.duration?.min !== undefined) {
+        queryParams.append('filters[duration][min]', filters.duration.min.toString());
+      }
+      
+      if (filters.duration?.max !== undefined) {
+        queryParams.append('filters[duration][max]', filters.duration.max.toString());
+      }
+      
+      // Legacy duration filters (fallback)
+      if (filters.min_duration !== undefined && !filters.duration?.min) {
+        queryParams.append('filters[duration][min]', filters.min_duration.toString());
+      }
+      
+      if (filters.max_duration !== undefined && !filters.duration?.max) {
+        queryParams.append('filters[duration][max]', filters.max_duration.toString());
+      }
+      
+      // Level filter
+      if (filters.level_id !== undefined) {
+        queryParams.append('filters[level_id]', filters.level_id.toString());
+      }
+      
+      // Date-based filters
+      if (filters.created_this_week) {
+        queryParams.append('filters[created_this_week]', '1');
+      }
+      
+      if (filters.created_this_month) {
+        queryParams.append('filters[created_this_month]', '1');
+      }
+      
+      if (filters.created_this_year) {
+        queryParams.append('filters[created_this_year]', '1');
+      }
+      
+      // Additional filters that might be useful
+      if (filters.mode) {
+        queryParams.append('filters[mode]', filters.mode);
+      }
+      
+      if (filters.learning_structure) {
+        queryParams.append('filters[learning_structure]', filters.learning_structure);
+      }
+      
+      if (filters.delivery_mode) {
+        queryParams.append('filters[delivery_mode]', filters.delivery_mode);
+      }
+      
+      if (filters.instructor_id) {
+        queryParams.append('filters[instructor_id]', filters.instructor_id.toString());
+      }
+      
+      if (filters.min_rating !== undefined) {
+        queryParams.append('filters[min_rating]', filters.min_rating.toString());
+      }
+    }
+    
+    const url = `student/courses?${queryParams.toString()}`;
+    
+    return _axios.get<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      // Return error in expected format
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch courses',
+        data: {
+          content: [],
+          pagination: {
+            current_page: page,
+            from: 0,
+            last_page: 1,
+            per_page: perPage,
             to: 0,
             total: 0,
             count: 0,

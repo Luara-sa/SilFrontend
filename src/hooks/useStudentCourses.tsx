@@ -185,7 +185,7 @@ export const useStudentCourses = (): UseStudentCoursesReturn => {
     }
   }, []);
 
-  // Apply filters and pagination on frontend
+  // Apply backend filtering and pagination
   const fetchStudentCourses = useCallback(
     async (
       page: number = 1,
@@ -193,45 +193,56 @@ export const useStudentCourses = (): UseStudentCoursesReturn => {
       filters: StudentCoursesFilters = {}
     ) => {
       try {
+        setLoading(true);
+        setError(null);
         setCurrentFilters(filters);
         setCurrentPage(page);
         setCurrentPerPage(perPage);
 
-        // If we don't have all courses yet, fetch them first
-        let coursesToFilter = allCourses;
-        if (coursesToFilter.length === 0) {
-          coursesToFilter = await fetchAllCourses();
+        // Use backend filtering with comprehensive filters
+        const response = await _CourseService.getStudentCoursesWithFilters(
+          page,
+          perPage,
+          filters
+        );
+
+        if (response.status && response.data?.content) {
+          const fetchedCourses = response.data.content;
+          setStudentCourses(fetchedCourses);
+
+          // Map to legacy Course structure for existing components
+          const mappedCourses =
+            mapStudentCoursesToCoursesLegacy(fetchedCourses);
+          setLegacyCourses(mappedCourses);
+
+          // Set pagination info from backend response
+          const paginationInfo = {
+            current_page: response.data.pagination.current_page,
+            last_page: response.data.pagination.last_page,
+            total: response.data.pagination.total,
+            has_next: response.data.pagination.has_next,
+          };
+          setPagination(paginationInfo);
+        } else {
+          setError(response.message || "Failed to fetch courses");
+          setStudentCourses([]);
+          setLegacyCourses([]);
+          setPagination(null);
         }
-
-        // Apply filters on frontend
-        const filteredCourses = applyFilters(coursesToFilter, filters);
-
-        // Apply pagination on filtered results
-        const { courses: paginatedCourses, pagination: paginationInfo } =
-          paginateResults(filteredCourses, page, perPage);
-
-        setStudentCourses(paginatedCourses);
-
-        // Map to legacy Course structure for existing components
-        const mappedCourses =
-          mapStudentCoursesToCoursesLegacy(paginatedCourses);
-        setLegacyCourses(mappedCourses);
-
-        // Set pagination info
-        setPagination(paginationInfo);
-      } catch (err) {
-        setError("Failed to process courses. Please try again.");
+      } catch (err: any) {
+        setError("Failed to fetch courses. Please check your connection.");
         setStudentCourses([]);
         setLegacyCourses([]);
         setPagination(null);
+      } finally {
+        setLoading(false);
       }
     },
-    [allCourses, fetchAllCourses]
+    [] // No dependencies needed for backend filtering
   );
 
   const refreshStudentCourses = useCallback(async () => {
-    // Force refresh all courses from API
-    setAllCourses([]);
+    // Refresh courses with current filters and page
     await fetchStudentCourses(currentPage, currentPerPage, currentFilters);
   }, [fetchStudentCourses, currentPage, currentPerPage, currentFilters]);
 

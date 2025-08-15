@@ -16,6 +16,10 @@ import {
   IconButton,
   Divider,
   Autocomplete,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Rating,
 } from "@mui/material";
 import { ExpandMore, Close, FilterList, Clear } from "@mui/icons-material";
 
@@ -59,17 +63,19 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
   // Update local state when store filters change
   useEffect(() => {
     setLocalFilters(filters);
-    if (filters.min_price !== undefined || filters.max_price !== undefined) {
-      setPriceRange([filters.min_price || 0, filters.max_price || 10000]);
+
+    // Handle price range - prioritize nested format, fallback to legacy
+    const minPrice = filters.price?.min ?? filters.min_price ?? 0;
+    const maxPrice = filters.price?.max ?? filters.max_price ?? 10000;
+    if (minPrice !== 0 || maxPrice !== 10000) {
+      setPriceRange([minPrice, maxPrice]);
     }
-    if (
-      filters.min_duration !== undefined ||
-      filters.max_duration !== undefined
-    ) {
-      setDurationRange([
-        filters.min_duration || 0,
-        filters.max_duration || 200,
-      ]);
+
+    // Handle duration range - prioritize nested format, fallback to legacy
+    const minDuration = filters.duration?.min ?? filters.min_duration ?? 0;
+    const maxDuration = filters.duration?.max ?? filters.max_duration ?? 200;
+    if (minDuration !== 0 || maxDuration !== 200) {
+      setDurationRange([minDuration, maxDuration]);
     }
   }, [filters]);
 
@@ -91,8 +97,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
     setPriceRange(range);
     setLocalFilters((prev) => ({
       ...prev,
+      // Support both legacy and new nested format
       min_price: range[0] > 0 ? range[0] : undefined,
       max_price: range[1] < 10000 ? range[1] : undefined,
+      price: {
+        min: range[0] > 0 ? range[0] : undefined,
+        max: range[1] < 10000 ? range[1] : undefined,
+      },
     }));
   };
 
@@ -104,8 +115,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
     setDurationRange(range);
     setLocalFilters((prev) => ({
       ...prev,
+      // Support both legacy and new nested format
       min_duration: range[0] > 0 ? range[0] : undefined,
       max_duration: range[1] < 200 ? range[1] : undefined,
+      duration: {
+        min: range[0] > 0 ? range[0] : undefined,
+        max: range[1] < 200 ? range[1] : undefined,
+      },
     }));
   };
 
@@ -349,6 +365,171 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
               <MenuItem value={5}>5 Stars</MenuItem>
             </Select>
           </FormControl>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Target Audience */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Target Audience
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <FormControl fullWidth size="small">
+            <InputLabel>Target Audience</InputLabel>
+            <Select
+              value={localFilters.target_audience_id || ""}
+              onChange={(e) =>
+                handleInputChange("target_audience_id", e.target.value)
+              }
+              label="Target Audience"
+            >
+              <MenuItem value="">All Audiences</MenuItem>
+              <MenuItem value={1}>Beginners</MenuItem>
+              <MenuItem value={2}>Intermediate</MenuItem>
+              <MenuItem value={3}>Advanced</MenuItem>
+              <MenuItem value={4}>Professionals</MenuItem>
+            </Select>
+          </FormControl>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Course Type */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Course Type
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.is_free || false}
+                  onChange={(e) =>
+                    handleInputChange("is_free", e.target.checked)
+                  }
+                />
+              }
+              label="Free Courses"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.is_paid || false}
+                  onChange={(e) =>
+                    handleInputChange("is_paid", e.target.checked)
+                  }
+                />
+              }
+              label="Paid Courses"
+            />
+          </FormGroup>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Course Level */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Course Level
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <FormControl fullWidth size="small">
+            <InputLabel>Course Level</InputLabel>
+            <Select
+              value={localFilters.level_id || ""}
+              onChange={(e) => handleInputChange("level_id", e.target.value)}
+              label="Course Level"
+            >
+              <MenuItem value="">All Levels</MenuItem>
+              <MenuItem value={0}>Beginner</MenuItem>
+              <MenuItem value={1}>Intermediate</MenuItem>
+              <MenuItem value={2}>Advanced</MenuItem>
+              <MenuItem value={3}>Expert</MenuItem>
+            </Select>
+          </FormControl>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Specific Rating */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Specific Rating
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              Select exact rating
+            </Typography>
+            <Rating
+              value={localFilters.rating || 0}
+              onChange={(event, newValue) => {
+                handleInputChange("rating", newValue);
+              }}
+              size="large"
+            />
+            {localFilters.rating && (
+              <Button
+                size="small"
+                onClick={() => handleInputChange("rating", undefined)}
+                sx={{ mt: 1 }}
+              >
+                Clear Rating
+              </Button>
+            )}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Course Creation Date */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Course Creation Date
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.created_this_week || false}
+                  onChange={(e) =>
+                    handleInputChange("created_this_week", e.target.checked)
+                  }
+                />
+              }
+              label="Created This Week"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.created_this_month || false}
+                  onChange={(e) =>
+                    handleInputChange("created_this_month", e.target.checked)
+                  }
+                />
+              }
+              label="Created This Month"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.created_this_year || false}
+                  onChange={(e) =>
+                    handleInputChange("created_this_year", e.target.checked)
+                  }
+                />
+              }
+              label="Created This Year"
+            />
+          </FormGroup>
         </AccordionDetails>
       </Accordion>
 

@@ -21,6 +21,7 @@ interface FilterStore {
 }
 
 const initialFilters: StudentCoursesFilters = {
+  // Existing filters
   category_id: undefined,
   mode: undefined,
   learning_structure: undefined,
@@ -32,6 +33,20 @@ const initialFilters: StudentCoursesFilters = {
   max_duration: undefined,
   instructor_id: undefined,
   search: undefined,
+  
+  // Comprehensive new filters
+  target_audience_id: undefined,
+  is_free: undefined,
+  is_paid: undefined,
+  rating: undefined,
+  level_id: undefined,
+  created_this_week: undefined,
+  created_this_month: undefined,
+  created_this_year: undefined,
+  
+  // Nested objects for API compatibility
+  price: undefined,
+  duration: undefined,
 };
 
 export const filterStore = create<FilterStore>((set: any) => ({

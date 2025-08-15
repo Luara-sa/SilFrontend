@@ -20,7 +20,7 @@ export const dividerStyle = {
 };
 
 export const CategoriesMenuOptions = () => {
-  const setInitFilterParams = filterStore((state) => state.setInitFilterParams);
+  const { setFilters, resetFilters } = filterStore();
   const { lang } = useTranslation();
   const router = useRouter();
 
@@ -37,22 +37,16 @@ export const CategoriesMenuOptions = () => {
     }
   }, [studentCategories, fetchStudentCategories]);
 
-  const params: any = {
-    page: 1,
-    limit: 20,
-    cat_ids: [],
-    section: "",
-    subscription: "",
-    price: [],
-    rate: "",
-    hours: [],
-    level: "",
-    tags: "",
-  };
+  const handleCategoryClick = (categoryId: number) => {
+    // Reset existing filters and apply category filter
+    resetFilters();
 
-  const handleCategoryClick = (id: number) => {
-    params.cat_ids.push(id);
-    setInitFilterParams(JSON.stringify(params));
+    // Set the category filter using the new comprehensive filtering system
+    setFilters({
+      category_id: categoryId,
+    });
+
+    // Navigate to courses page
     router.push("/courses");
   };
 
