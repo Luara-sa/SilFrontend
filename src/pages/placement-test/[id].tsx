@@ -116,10 +116,14 @@ const PlacementTest = () => {
       );
       if (response.data.status) {
         setTestResults(response.data.data);
-      } else {
-        console.error("Failed to fetch results:", response.data.message);
       }
+      // If no results, silently ignore - this is expected behavior
     } catch (err: any) {
+      // Silently handle "no results" case - this is expected when user hasn't completed the test
+      if (err?.response?.status === 404 || 
+          err?.response?.data?.message === "response.not_found") {
+        return;
+      }
       console.error("Error fetching test results:", err);
     }
   };

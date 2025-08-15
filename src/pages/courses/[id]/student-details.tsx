@@ -32,6 +32,9 @@ import {
   PlayCircleOutline,
   OnlinePrediction,
   CheckCircle,
+  Receipt,
+  CloudDownload,
+  Warning,
 } from "@mui/icons-material";
 import {
   useDetailedStudentCourse,
@@ -39,7 +42,7 @@ import {
   useCourseEnrollmentStatus,
 } from "hooks/useStudentCourses";
 import { CourseGroup, CourseLevel, TargetAudience } from "interface/common";
-import { Seo } from "components/shared";
+import { Seo, PaymentModal } from "components/shared";
 import useTranslation from "next-translate/useTranslation";
 
 const StudentCourseDetailsPage = () => {
@@ -68,6 +71,9 @@ const StudentCourseDetailsPage = () => {
 
   // State for group selection
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+
+  // State for payment modal
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   // Reset enrollment state when course changes
   useEffect(() => {
@@ -149,11 +155,11 @@ const StudentCourseDetailsPage = () => {
   const handleEnrollment = async () => {
     if (!courseData) return;
 
-    // Check if course is paid, redirect to checkout
+    // Check if course is paid, open payment modal
     const isPaidCourse =
       courseData.course_setting?.is_free !== 1 && courseData.course_price;
     if (isPaidCourse) {
-      router.push(`/courses/${courseData.id}/checkout`);
+      setPaymentModalOpen(true);
       return;
     }
 
@@ -379,6 +385,144 @@ const StudentCourseDetailsPage = () => {
                           </Grid>
                         </CardContent>
                       </Card>
+
+                      {/* Purchase Details Card */}
+                      {enrollmentStatus.purchase_details && (
+                        <Card sx={{ mb: 2 }}>
+                          <CardContent>
+                            <Typography
+                              variant="h6"
+                              gutterBottom
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <Receipt color="primary" />
+                              Purchase Details
+                            </Typography>
+
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} sm={6}>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Payment Method
+                                </Typography>
+                                <Chip
+                                  label={
+                                    enrollmentStatus.purchase_details.purchase
+                                      .payment_method === "bank_transfer"
+                                      ? "Bank Transfer"
+                                      : enrollmentStatus.purchase_details
+                                          .purchase.payment_method === "paymob"
+                                      ? "Credit Card"
+                                      : enrollmentStatus.purchase_details
+                                          .purchase.payment_method === "tamara"
+                                      ? "Tamara"
+                                      : enrollmentStatus.purchase_details
+                                          .purchase.payment_method
+                                  }
+                                  variant="outlined"
+                                  color="primary"
+                                  size="small"
+                                  sx={{ mt: 0.5 }}
+                                />
+                              </Grid>
+
+                              <Grid item xs={12} sm={6}>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Payment Status
+                                </Typography>
+                                <Chip
+                                  label={
+                                    enrollmentStatus.purchase_details.purchase
+                                      .status
+                                  }
+                                  color={
+                                    enrollmentStatus.purchase_details.purchase
+                                      .status === "completed" ||
+                                    enrollmentStatus.purchase_details.purchase
+                                      .status === "paid" ||
+                                    enrollmentStatus.purchase_details.purchase
+                                      .status === "success"
+                                      ? "success"
+                                      : enrollmentStatus.purchase_details
+                                          .purchase.status === "pending"
+                                      ? "warning"
+                                      : "error"
+                                  }
+                                  size="small"
+                                  sx={{ mt: 0.5 }}
+                                  icon={
+                                    enrollmentStatus.purchase_details.purchase
+                                      .status === "pending" ? (
+                                      <Warning />
+                                    ) : undefined
+                                  }
+                                />
+                              </Grid>
+
+                              {/* Show uploaded document for bank transfer */}
+                              {enrollmentStatus.purchase_details.purchase
+                                .payment_method === "bank_transfer" &&
+                                enrollmentStatus.purchase_details.document && (
+                                  <Grid item xs={12}>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      gutterBottom
+                                    >
+                                      Uploaded Document
+                                    </Typography>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      startIcon={<CloudDownload />}
+                                      onClick={() =>
+                                        window.open(
+                                          enrollmentStatus.purchase_details
+                                            .document,
+                                          "_blank"
+                                        )
+                                      }
+                                      sx={{ textTransform: "none" }}
+                                    >
+                                      View Bank Transfer Receipt
+                                    </Button>
+                                  </Grid>
+                                )}
+
+                              {/* Show installments if available */}
+                              {enrollmentStatus.purchase_details.installments &&
+                                enrollmentStatus.purchase_details.installments
+                                  .length > 0 && (
+                                  <Grid item xs={12}>
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                      gutterBottom
+                                    >
+                                      Installments
+                                    </Typography>
+                                    <Typography variant="body2">
+                                      {
+                                        enrollmentStatus.purchase_details
+                                          .installments.length
+                                      }{" "}
+                                      installment(s) available
+                                    </Typography>
+                                  </Grid>
+                                )}
+                            </Grid>
+                          </CardContent>
+                        </Card>
+                      )}
 
                       <Button
                         variant="contained"
@@ -756,6 +900,28 @@ const StudentCourseDetailsPage = () => {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Payment Modal */}
+      {courseData && (
+        <PaymentModal
+          open={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          courseId={courseData.id}
+          coursePrice={
+            typeof courseData.course_price === "object"
+              ? courseData.course_price?.discounted_price ||
+                courseData.course_price?.price ||
+                0
+              : courseData.course_price || 0
+          }
+          courseName={
+            typeof courseData.name === "string"
+              ? courseData.name
+              : courseData.name?.en || courseData.name?.ar || "Course"
+          }
+          courseGroupId={selectedGroupId || undefined}
+        />
+      )}
     </>
   );
 };

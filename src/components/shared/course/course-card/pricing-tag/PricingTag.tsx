@@ -33,9 +33,10 @@ export const PricingTag = (props: Props) => {
       >
         <Box sx={{}}>
           {variantsObj[variants].text}{" "}
-          {variantsObj[variants].hasPrice && ` ${discount}%`}
+          {variantsObj[variants].hasPrice &&
+            ` ${Number(discount ?? 0).toFixed(2)}%`}
         </Box>
-        {variantsObj[variants].hasPrice && (
+        {/* {variantsObj[variants].hasPrice && (
           <Box
             sx={{
               display: "flex",
@@ -43,12 +44,12 @@ export const PricingTag = (props: Props) => {
               columnGap: "5px",
             }}
           >
-            {price}
+            {Number(price ?? 0).toFixed(2)}
             <Typography sx={{ fontSize: "12px", fontWeight: "700" }}>
               SAR
             </Typography>
           </Box>
-        )}
+        )} */}
       </Box>
     );
 

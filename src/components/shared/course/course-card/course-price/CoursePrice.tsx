@@ -25,10 +25,11 @@ export const CoursePrice = ({
 
   // Format currency display
   const formatPrice = (priceValue: number) => {
+    const valueWithFixedDecimals = Number(priceValue).toFixed(2);
     if (currency && currency.includes("SAR")) {
-      return `${priceValue} ${currency}`;
+      return `${valueWithFixedDecimals} ${currency}`;
     }
-    return `${priceValue} ${currency || t("sar")}`;
+    return `${valueWithFixedDecimals} ${currency || t("sar")}`;
   };
 
   if (disable && hasDiscount) {

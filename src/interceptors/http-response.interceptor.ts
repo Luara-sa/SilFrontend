@@ -132,9 +132,30 @@ export const HttpResponseInterceptor = ({
           });
           break;
 
+        // Handle not found specifically for placement tests
+        case 404:
+          // Don't show error toast for placement test results - it's normal when no results exist
+          if (error.config?.url?.includes('/placement-tests/') && error.config?.url?.includes('/result')) {
+            // Silently handle placement test result not found - this is expected behavior
+            break;
+          }
+          
+          if (error.response?.data?.message) {
+            enqueueSnackbar(error.response.data.message, {
+              variant: "error",
+              autoHideDuration: 3000,
+            });
+          }
+          break;
+
         default:
           // Only show generic error message for unexpected errors
           if (error.response?.data?.message) {
+            // Don't show error toast for placement test results - it's normal when no results exist
+            if (error.config?.url?.includes('/placement-tests/') && error.config?.url?.includes('/result')) {
+              break;
+            }
+            
             enqueueSnackbar(error.response.data.message, {
               variant: "error",
               autoHideDuration: 3000,

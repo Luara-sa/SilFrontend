@@ -62,6 +62,12 @@ export default _axios.interceptors.response.use(
 
       // Handle not found
       case 404:
+        // Don't show error toast for placement test results - it's normal when no results exist
+        if (error.config?.url?.includes('/placement-tests/') && error.config?.url?.includes('/result')) {
+          // Silently handle placement test result not found - this is expected behavior
+          break;
+        }
+        
         eventEmitter.emit("enqueueSnackbar", {
           message: errorData?.message || 'Resource not found',
           variant: "error",

@@ -43,11 +43,21 @@ const PlacementTestResult = () => {
       if (response.data.status && response.data.data) {
         setResults(response.data.data);
       } else {
-        setError("No results found for this test");
+        // No results found - this is normal, redirect user to take the test
+        router.push(`/placement-test/${id}`);
       }
     } catch (err: any) {
+      // Handle 404 or "not found" gracefully - user hasn't taken the test yet
+      if (
+        err?.response?.status === 404 ||
+        err?.response?.data?.message === "response.not_found"
+      ) {
+        router.push(`/placement-test/${id}`);
+        return;
+      }
+
       console.error("Error fetching test results:", err);
-      setError(err?.response?.data?.message || "Failed to load results");
+      setError("Failed to load results. Please try again.");
     } finally {
       setLoading(false);
     }
