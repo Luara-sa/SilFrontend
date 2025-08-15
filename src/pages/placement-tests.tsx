@@ -13,6 +13,10 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 import { Seo } from "components/shared";
@@ -26,6 +30,8 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import ScoreIcon from "@mui/icons-material/Score";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const PlacementTests = () => {
   const { t } = useTranslation("common");
@@ -34,10 +40,33 @@ const PlacementTests = () => {
   const [placementTests, setPlacementTests] = useState<PlacementTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [testResults, setTestResults] = useState<{ [key: number]: any }>({});
+  const [showResultDialog, setShowResultDialog] = useState(false);
+  const [selectedTestResult, setSelectedTestResult] = useState<any>(null);
 
   useEffect(() => {
     fetchPlacementTests();
   }, []);
+
+  // Fetch test results for completed tests
+  const fetchTestResults = async (testIds: number[]) => {
+    const results: { [key: number]: any } = {};
+
+    for (const testId of testIds) {
+      try {
+        const response = await _PlacementTestService.getPlacementTestResult(
+          testId
+        );
+        if (response.data.status && response.data.data) {
+          results[testId] = response.data.data;
+        }
+      } catch (err) {
+        // Silently ignore errors for tests without results
+      }
+    }
+
+    setTestResults(results);
+  };
 
   const fetchPlacementTests = async () => {
     try {
@@ -47,7 +76,17 @@ const PlacementTests = () => {
       const response = await _PlacementTestService.getPlacementTests();
 
       if (response.data.status) {
-        setPlacementTests(response.data.data.content);
+        const tests = response.data.data.content;
+        setPlacementTests(tests);
+
+        // Fetch results for completed tests
+        const completedTestIds = tests
+          .filter((test) => test.submit_at && test.is_visible_result === 1)
+          .map((test) => test.id);
+
+        if (completedTestIds.length > 0) {
+          await fetchTestResults(completedTestIds);
+        }
       } else {
         setError(response.data.message || "Failed to fetch placement tests");
       }
@@ -70,23 +109,153 @@ const PlacementTests = () => {
   };
 
   const handleStartTest = async (testId: number) => {
-    try {
-      // First check if test is already completed
-      const resultsResponse =
-        await _PlacementTestService.getPlacementTestResult(testId);
+    router.push(`/placement-test/${testId}`);
+  };
 
-      if (resultsResponse.data.status && resultsResponse.data.data) {
-        // Show results in a modal or navigate to results view
-        // For now, let's create a results route
-        router.push(`/placement-test/${testId}/result`);
-        return;
-      }
-    } catch (err: any) {
-      // This is expected if test hasn't been completed yet
+  const handleViewResults = (testId: number) => {
+    const result = testResults[testId];
+    if (result) {
+      setSelectedTestResult(result);
+      setShowResultDialog(true);
+    }
+  };
+
+  const renderTestButton = (test: PlacementTest) => {
+    const isExpired = new Date(test.expire_date) < new Date();
+    const isCompleted = test.submit_at;
+    const hasVisibleResults = test.is_visible_result === 1;
+    const hasResults = testResults[test.id];
+
+    if (isExpired) {
+      return (
+        <Button
+          variant="outlined"
+          fullWidth
+          disabled
+          sx={{
+            mt: "auto",
+            py: 1.5,
+            fontSize: "1rem",
+            fontWeight: "bold",
+          }}
+        >
+          Expired
+        </Button>
+      );
     }
 
-    // No results found, proceed to test page normally
-    router.push(`/placement-test/${testId}`);
+    if (isCompleted && hasVisibleResults && hasResults) {
+      return (
+        <Box
+          sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              p: 1,
+              bgcolor: "success.light",
+              borderRadius: 1,
+            }}
+          >
+            <CheckCircleIcon sx={{ color: "success.main", fontSize: 20 }} />
+            <Typography
+              variant="body2"
+              sx={{ color: "success.main", fontWeight: "bold" }}
+            >
+              Completed
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => handleViewResults(test.id)}
+            startIcon={<VisibilityIcon />}
+            sx={{
+              py: 1.5,
+              fontSize: "1rem",
+              fontWeight: "bold",
+            }}
+          >
+            View Results
+          </Button>
+        </Box>
+      );
+    }
+
+    if (isCompleted && hasVisibleResults && !hasResults) {
+      return (
+        <Box
+          sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              p: 1,
+              bgcolor: "info.light",
+              borderRadius: 1,
+            }}
+          >
+            <CheckCircleIcon sx={{ color: "info.main", fontSize: 20 }} />
+            <Typography
+              variant="body2"
+              sx={{ color: "info.main", fontWeight: "bold" }}
+            >
+              Completed - Processing Results
+            </Typography>
+          </Box>
+        </Box>
+      );
+    }
+
+    if (isCompleted && !hasVisibleResults) {
+      return (
+        <Box
+          sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              p: 1,
+              bgcolor: "warning.light",
+              borderRadius: 1,
+            }}
+          >
+            <CheckCircleIcon sx={{ color: "warning.main", fontSize: 20 }} />
+            <Typography
+              variant="body2"
+              sx={{ color: "warning.main", fontWeight: "bold" }}
+            >
+              Completed - Results Not Available
+            </Typography>
+          </Box>
+        </Box>
+      );
+    }
+
+    return (
+      <Button
+        variant="contained"
+        fullWidth
+        onClick={() => handleStartTest(test.id)}
+        sx={{
+          mt: "auto",
+          py: 1.5,
+          fontSize: "1rem",
+          fontWeight: "bold",
+        }}
+      >
+        Start Test
+      </Button>
+    );
   };
 
   if (loading) {
@@ -163,7 +332,7 @@ const PlacementTests = () => {
                       transform: "translateY(-4px)",
                       boxShadow: 4,
                     },
-                    opacity: isExpired(test.expire_date) ? 0.6 : 1,
+                    opacity: new Date(test.expire_date) < new Date() ? 0.6 : 1,
                   }}
                 >
                   <CardContent sx={{ flexGrow: 1, p: 3 }}>
@@ -180,20 +349,45 @@ const PlacementTests = () => {
                         {test.name}
                       </Typography>
 
-                      <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                        {isExpired(test.expire_date) ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          mb: 2,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {new Date(test.expire_date) < new Date() ? (
                           <Chip
                             label="Expired"
                             color="error"
                             size="small"
                             variant="outlined"
                           />
+                        ) : test.submit_at ? (
+                          <Chip
+                            label="Completed"
+                            color="success"
+                            size="small"
+                            variant="filled"
+                            icon={<CheckCircleIcon />}
+                          />
                         ) : (
                           <Chip
                             label="Available"
-                            color="success"
+                            color="primary"
                             size="small"
                             variant="outlined"
+                          />
+                        )}
+                        {test.submit_at && testResults[test.id] && (
+                          <Chip
+                            label={`Score: ${
+                              testResults[test.id].score || "N/A"
+                            }`}
+                            color="info"
+                            size="small"
+                            variant="filled"
                           />
                         )}
                       </Box>
@@ -257,26 +451,83 @@ const PlacementTests = () => {
                       </Box>
                     </Box>
 
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={() => handleStartTest(test.id)}
-                      disabled={isExpired(test.expire_date)}
-                      sx={{
-                        mt: "auto",
-                        py: 1.5,
-                        fontSize: "1rem",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {isExpired(test.expire_date) ? "Expired" : "Start Test"}
-                    </Button>
+                    {renderTestButton(test)}
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
         )}
+
+        {/* Test Results Dialog */}
+        <Dialog
+          open={showResultDialog}
+          onClose={() => setShowResultDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <ScoreIcon color="primary" />
+            Test Results
+          </DialogTitle>
+          <DialogContent>
+            {selectedTestResult && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Card sx={{ p: 2, bgcolor: "background.default" }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    <Typography variant="body1">
+                      <strong>Score:</strong>{" "}
+                      {selectedTestResult.score !== null &&
+                      selectedTestResult.score !== undefined
+                        ? selectedTestResult.score
+                        : "N/A"}
+                    </Typography>
+                    {selectedTestResult.percentage && (
+                      <Typography variant="body1">
+                        <strong>Percentage:</strong>{" "}
+                        {selectedTestResult.percentage}%
+                      </Typography>
+                    )}
+                    <Typography variant="body1">
+                      <strong>Status:</strong>{" "}
+                      {selectedTestResult.status !== null &&
+                      selectedTestResult.status !== undefined
+                        ? selectedTestResult.status
+                        : "Completed"}
+                    </Typography>
+                    {selectedTestResult.level && (
+                      <Typography variant="body1">
+                        <strong>Level:</strong> {selectedTestResult.level}
+                      </Typography>
+                    )}
+                    {selectedTestResult.total_questions && (
+                      <Typography variant="body1">
+                        <strong>Total Questions:</strong>{" "}
+                        {selectedTestResult.total_questions}
+                      </Typography>
+                    )}
+                    {selectedTestResult.correct_answers !== undefined && (
+                      <Typography variant="body1">
+                        <strong>Correct Answers:</strong>{" "}
+                        {selectedTestResult.correct_answers}
+                      </Typography>
+                    )}
+                  </Box>
+                </Card>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => setShowResultDialog(false)}
+              variant="contained"
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </>
   );

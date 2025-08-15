@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import {
   Container,
@@ -28,205 +28,104 @@ import {
   QuizQuestion,
   QuestionAnswer,
 } from "services/placement-test.service";
+import { placementTestStore } from "store/placementTestStore";
 
 import TimerIcon from "@mui/icons-material/Timer";
 import QuizIcon from "@mui/icons-material/Quiz";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RestoreIcon from "@mui/icons-material/Restore";
 
 const PlacementTest = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  // State management
-  const [testData, setTestData] = useState<PlacementTestDetail | null>(null);
+  // Enhanced state management with persistence
+  const {
+    currentTest,
+    initializeTest,
+    startTest,
+    updateProgress,
+    updateTimeLeft,
+    completeTest,
+    clearTest,
+    isTestInProgress,
+    getTestProgress,
+  } = placementTestStore();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [testStarted, setTestStarted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<{ [questionId: number]: string[] }>(
-    {}
-  );
-  const [timeLeft, setTimeLeft] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [testCompleted, setTestCompleted] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showUnansweredDialog, setShowUnansweredDialog] = useState(false);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [unansweredQuestions, setUnansweredQuestions] = useState<number[]>([]);
   const [testResults, setTestResults] = useState<any>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isTestCompletedOnServer, setIsTestCompletedOnServer] = useState(false);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const preventNavigationRef = useRef(false);
 
-  // Don't fetch test data automatically - wait for user to start test
-  useEffect(() => {
-    if (id) {
-      setLoading(false); // Just stop loading to show the pre-test screen
-    }
-  }, [id]);
+  // Derived state from store
+  const testData = currentTest?.testData || null;
+  const testStarted = currentTest?.isStarted || false;
+  const currentQuestionIndex = currentTest?.currentQuestionIndex || 0;
+  const answers = currentTest?.answers || {};
+  const timeLeft = currentTest?.timeLeft || 0;
+  const testCompleted = currentTest?.isCompleted || false;
 
-  // Timer logic
-  useEffect(() => {
-    if (testStarted && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleTimeUp();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+  // Calculate progress percentage
+  const progress = testData
+    ? ((currentQuestionIndex + 1) / testData.topic.quiz.questions.length) * 100
+    : 0;
 
-      return () => clearInterval(timer);
-    }
-  }, [testStarted, timeLeft]);
+  // Define callback functions first
+  const setPreventNavigation = useCallback((prevent: boolean) => {
+    preventNavigationRef.current = prevent;
+    setHasUnsavedChanges(prevent);
+  }, []);
 
-  const fetchTestData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await _PlacementTestService.getPlacementTestQuestions(
-        Number(id)
-      );
-
-      if (response.data.status) {
-        setTestData(response.data.data);
-        // Set timer duration (convert minutes to seconds)
-        setTimeLeft(parseInt(response.data.data.topic.quiz.duration) * 60);
-      } else {
-        setError(response.data.message);
-      }
-    } catch (err: any) {
-      console.error("Error fetching test data:", err);
-      // Handle the specific "must start test" error gracefully
-      const errorMessage = err?.response?.data?.message || "";
-      if (errorMessage.includes("You must start the placement test")) {
-        // This is expected - show pre-test screen
+  const fetchTestData = useCallback(
+    async (testId?: number) => {
+      const targetId = testId || Number(id);
+      try {
+        setLoading(true);
         setError("");
-      } else {
-        setError(errorMessage || "Failed to load test");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
 
-  const fetchTestResults = async () => {
-    try {
-      const response = await _PlacementTestService.getPlacementTestResult(
-        Number(id)
-      );
-      if (response.data.status) {
-        setTestResults(response.data.data);
-      }
-      // If no results, silently ignore - this is expected behavior
-    } catch (err: any) {
-      // Silently handle "no results" case - this is expected when user hasn't completed the test
-      if (err?.response?.status === 404 || 
-          err?.response?.data?.message === "response.not_found") {
-        return;
-      }
-      console.error("Error fetching test results:", err);
-    }
-  };
+        const response = await _PlacementTestService.getPlacementTestQuestions(
+          targetId
+        );
 
-  const startTest = async () => {
-    // Prevent multiple simultaneous calls
-    if (loading) return;
+        if (response.data.status) {
+          const test = response.data.data;
+          // Calculate total time for the test
+          const totalMinutes = parseInt(test.topic.quiz.duration) || 30;
+          const totalSeconds = totalMinutes * 60;
 
-    // Check if user is logged in and has token
-    const token = localStorage.getItem("token");
-
-    if (!id) {
-      console.error("❌ No ID available");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // First, check if test is already completed by checking for results
-      const resultsResponse =
-        await _PlacementTestService.getPlacementTestResult(Number(id));
-
-      if (resultsResponse.data.status && resultsResponse.data.data) {
-        setTestResults(resultsResponse.data.data);
-        setTestCompleted(true);
-        return;
-      }
-    } catch (resultsErr: any) {
-      // This is expected if test hasn't been completed yet
-    }
-
-    try {
-      const response = await _PlacementTestService.startPlacementTest(
-        Number(id)
-      );
-
-      if (response.data.status) {
-        setTestStarted(true);
-        await fetchTestData();
-      } else {
-        // Check if test was already started
-        if (response.data.message.includes("already started")) {
-          setTestStarted(true);
-          await fetchTestData();
+          // Initialize test in store
+          initializeTest(targetId, test, totalSeconds);
+          setPreventNavigation(true);
         } else {
           setError(response.data.message);
         }
-      }
-    } catch (err: any) {
-      console.error("❌ Error in startTest:", err);
-
-      // Check if the error indicates test already started
-      const errorMessage = err?.response?.data?.message || "";
-      if (errorMessage.includes("already started")) {
-        setTestStarted(true);
-        await fetchTestData();
-      } else {
-        setError(err?.response?.data?.message || "Failed to start test");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnswerChange = (
-    questionId: number,
-    answerId: string,
-    isMultiple: boolean
-  ) => {
-    setAnswers((prev) => {
-      if (isMultiple) {
-        const currentAnswers = prev[questionId] || [];
-        const isSelected = currentAnswers.includes(answerId);
-
-        if (isSelected) {
-          return {
-            ...prev,
-            [questionId]: currentAnswers.filter((id) => id !== answerId),
-          };
+      } catch (err: any) {
+        console.error("Error fetching test data:", err);
+        // Handle the specific "must start test" error gracefully
+        const errorMessage = err?.response?.data?.message || "";
+        if (errorMessage.includes("You must start the placement test")) {
+          // This is expected - show pre-test screen
+          setError("");
         } else {
-          return {
-            ...prev,
-            [questionId]: [...currentAnswers, answerId],
-          };
+          setError(errorMessage || "Failed to load test");
         }
-      } else {
-        return {
-          ...prev,
-          [questionId]: [answerId],
-        };
+      } finally {
+        setLoading(false);
       }
-    });
-  };
+    },
+    [id, initializeTest, setPreventNavigation]
+  );
 
-  const handleTextAnswerChange = (questionId: number, value: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: [value],
-    }));
-  };
-
-  const submitCurrentAnswer = async () => {
+  const submitCurrentAnswer = useCallback(async () => {
     if (!testData) return;
 
     const currentQuestion = testData.topic.quiz.questions[currentQuestionIndex];
@@ -247,59 +146,38 @@ const PlacementTest = () => {
 
       const response = await _PlacementTestService.submitQuizAnswer(answerData);
 
-      if (!response.data.status) {
+      if (response.data.status) {
+        setHasUnsavedChanges(false);
+      } else {
         console.warn("Answer submission warning:", response.data.message);
       }
     } catch (err: any) {
       console.error("Error submitting answer:", err);
     }
-  };
+  }, [testData, currentQuestionIndex, answers]);
 
-  const nextQuestion = async () => {
-    await submitCurrentAnswer();
-
-    if (currentQuestionIndex < testData!.topic.quiz.questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    } else {
-      handleFinishTest();
-    }
-  };
-
-  const previousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
-    }
-  };
-
-  const getUnansweredQuestions = () => {
-    if (!testData) return [];
-
-    const unanswered: number[] = [];
-    testData.topic.quiz.questions.forEach((question, index) => {
-      const hasAnswer = answers[question.id] && answers[question.id].length > 0;
-      if (!hasAnswer) {
-        unanswered.push(index);
+  const fetchTestResults = useCallback(async () => {
+    try {
+      const response = await _PlacementTestService.getPlacementTestResult(
+        Number(id)
+      );
+      if (response.data.status) {
+        setTestResults(response.data.data);
       }
-    });
-    return unanswered;
-  };
-
-  const navigateToQuestion = (questionIndex: number) => {
-    setCurrentQuestionIndex(questionIndex);
-    setShowUnansweredDialog(false);
-  };
-
-  const handleFinishTest = () => {
-    const unanswered = getUnansweredQuestions();
-    if (unanswered.length > 0) {
-      setUnansweredQuestions(unanswered);
-      setShowUnansweredDialog(true);
-    } else {
-      setShowConfirmDialog(true);
+      // If no results, silently ignore - this is expected behavior
+    } catch (err: any) {
+      // Silently handle "no results" case - this is expected when user hasn't completed the test
+      if (
+        err?.response?.status === 404 ||
+        err?.response?.data?.message === "response.not_found"
+      ) {
+        return;
+      }
+      console.error("Error fetching test results:", err);
     }
-  };
+  }, [id]);
 
-  const submitFinalQuiz = async () => {
+  const submitFinalQuiz = useCallback(async () => {
     if (!testData) return;
 
     try {
@@ -319,8 +197,10 @@ const PlacementTest = () => {
       );
 
       if (response.data.status) {
-        setTestCompleted(true);
+        completeTest();
         setShowConfirmDialog(false);
+        setPreventNavigation(false);
+        setHasUnsavedChanges(false);
         // Fetch and show results
         await fetchTestResults();
       } else {
@@ -332,13 +212,388 @@ const PlacementTest = () => {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [
+    testData,
+    submitCurrentAnswer,
+    completeTest,
+    setPreventNavigation,
+    fetchTestResults,
+  ]);
+
+  const handleTimeExpired = useCallback(
+    async (testId: number) => {
+      try {
+        // Auto-submit the test when time expires
+        if (currentTest?.testData) {
+          await submitFinalQuiz();
+        }
+      } catch (err) {
+        console.error("Error auto-submitting expired test:", err);
+      }
+    },
+    [currentTest, submitFinalQuiz]
+  );
+
+  const initializeTestFlow = useCallback(
+    async (testId: number) => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // First check if test is submitted on server by checking placement tests list
+        try {
+          const testsResponse = await _PlacementTestService.getPlacementTests();
+          if (testsResponse.data.status && testsResponse.data.data.content) {
+            const currentTestInfo = testsResponse.data.data.content.find(
+              (test) => test.id === testId
+            );
+
+            if (currentTestInfo?.submit_at) {
+              // Test is submitted, fetch results if visible
+              if (currentTestInfo.is_visible_result === 1) {
+                try {
+                  const resultsResponse =
+                    await _PlacementTestService.getPlacementTestResult(testId);
+                  if (
+                    resultsResponse.data.status &&
+                    resultsResponse.data.data
+                  ) {
+                    setTestResults(resultsResponse.data.data);
+                  }
+                } catch (err) {
+                  console.warn("No results available yet");
+                }
+              }
+              // Set server completion state instead of calling completeTest()
+              setIsTestCompletedOnServer(true);
+              setLoading(false);
+              setIsInitializing(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Failed to check test status:", err);
+        }
+
+        // Check for existing progress for this specific test
+        const existingProgress = getTestProgress(testId);
+
+        if (
+          existingProgress &&
+          existingProgress.isStarted &&
+          !existingProgress.isCompleted
+        ) {
+          // Calculate remaining time based on elapsed time
+          const elapsedTime = Math.floor(
+            (Date.now() - existingProgress.testStartedAt) / 1000
+          );
+          const calculatedTimeLeft = Math.max(
+            0,
+            existingProgress.totalTime - elapsedTime
+          );
+
+          if (calculatedTimeLeft > 0) {
+            // Update time left and show resume dialog
+            updateTimeLeft(calculatedTimeLeft);
+            setShowResumeDialog(true);
+            setPreventNavigation(true);
+          } else {
+            // Time expired, auto-submit
+            await handleTimeExpired(testId);
+          }
+        }
+
+        // If no server submission and no local progress, show start screen
+      } catch (err: any) {
+        console.error("Error initializing test:", err);
+        setError(err?.response?.data?.message || "Failed to initialize test");
+      } finally {
+        setLoading(false);
+        setIsInitializing(false);
+      }
+    },
+    [getTestProgress, updateTimeLeft, handleTimeExpired, setPreventNavigation]
+  );
 
   const handleTimeUp = useCallback(() => {
     if (!testCompleted) {
       submitFinalQuiz();
     }
-  }, [testCompleted]);
+  }, [testCompleted, submitFinalQuiz]);
+
+  const autoSaveProgress = useCallback(async () => {
+    if (!testData || !currentTest) return;
+
+    try {
+      // Submit current answer if any
+      const currentQuestion =
+        testData.topic.quiz.questions[currentQuestionIndex];
+      const questionAnswers = answers[currentQuestion.id] || [];
+
+      if (questionAnswers.length > 0) {
+        await submitCurrentAnswer();
+        setHasUnsavedChanges(false);
+      }
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+    }
+  }, [
+    testData,
+    currentTest,
+    currentQuestionIndex,
+    answers,
+    submitCurrentAnswer,
+  ]);
+
+  // Clear ALL state when test ID changes
+  useEffect(() => {
+    if (id) {
+      // Always clear store state when navigating to any test page
+      clearTest();
+
+      // Clear all local state
+      setTestResults(null);
+      setError("");
+      setIsInitializing(true);
+      setIsTestCompletedOnServer(false);
+      setHasUnsavedChanges(false);
+      setShowConfirmDialog(false);
+      setShowUnansweredDialog(false);
+      setShowResumeDialog(false);
+    }
+  }, [id, clearTest]);
+
+  // Robust initialization and resume logic
+  useEffect(() => {
+    if (id && isInitializing) {
+      const testId = Number(id);
+      initializeTestFlow(testId);
+    }
+  }, [id, isInitializing, initializeTestFlow]);
+
+  // Timer logic
+  useEffect(() => {
+    if (testStarted && timeLeft > 0) {
+      const timer = setInterval(() => {
+        const newTimeLeft = timeLeft - 1;
+        if (newTimeLeft <= 0) {
+          handleTimeUp();
+          updateTimeLeft(0);
+        } else {
+          updateTimeLeft(newTimeLeft);
+        }
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [testStarted, timeLeft, updateTimeLeft, handleTimeUp]);
+
+  // Browser navigation protection
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (preventNavigationRef.current && testStarted && !testCompleted) {
+        e.preventDefault();
+        e.returnValue =
+          "You have an active test in progress. Leaving will not save your current progress. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    const handleRouteChange = (url: string) => {
+      if (preventNavigationRef.current && testStarted && !testCompleted) {
+        const confirmLeave = window.confirm(
+          "You have an active test in progress. Leaving will not save your current progress. Are you sure you want to leave?"
+        );
+        if (!confirmLeave) {
+          router.events.emit("routeChangeError");
+          throw "Route change aborted by user";
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    router.events.on("routeChangeStart", handleRouteChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      router.events.off("routeChangeStart", handleRouteChange);
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [testStarted, testCompleted, router]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (testStarted && !testCompleted) {
+      // Auto-save every 10 seconds
+      autoSaveIntervalRef.current = setInterval(() => {
+        if (hasUnsavedChanges) {
+          autoSaveProgress();
+        }
+      }, 10000);
+
+      return () => {
+        if (autoSaveIntervalRef.current) {
+          clearInterval(autoSaveIntervalRef.current);
+        }
+      };
+    }
+  }, [testStarted, testCompleted, hasUnsavedChanges, autoSaveProgress]);
+
+  const handleStartTest = async () => {
+    // Prevent multiple simultaneous calls
+    if (loading || submitting) return;
+
+    if (!id) {
+      console.error("❌ No ID available");
+      return;
+    }
+
+    setLoading(true);
+    const testId = Number(id);
+
+    try {
+      // Check if test is submitted on server first
+      try {
+        const testsResponse = await _PlacementTestService.getPlacementTests();
+        if (testsResponse.data.status && testsResponse.data.data.content) {
+          const currentTestInfo = testsResponse.data.data.content.find(
+            (test) => test.id === testId
+          );
+
+          if (currentTestInfo?.submit_at) {
+            // Test is submitted, fetch results if visible
+            if (currentTestInfo.is_visible_result === 1) {
+              try {
+                const resultsResponse =
+                  await _PlacementTestService.getPlacementTestResult(testId);
+                if (resultsResponse.data.status && resultsResponse.data.data) {
+                  setTestResults(resultsResponse.data.data);
+                }
+              } catch (err) {
+                console.warn("No results available yet");
+              }
+            }
+            // Set server completion state instead of calling completeTest()
+            setIsTestCompletedOnServer(true);
+            setPreventNavigation(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to check test status:", err);
+      }
+
+      // Try to start the test on the server
+      let testAlreadyStarted = false;
+      try {
+        const response = await _PlacementTestService.startPlacementTest(testId);
+
+        if (
+          !response.data.status &&
+          response.data.message.includes("already started")
+        ) {
+          testAlreadyStarted = true;
+        }
+      } catch (err: any) {
+        const errorMessage = err?.response?.data?.message || "";
+        if (errorMessage.includes("already started")) {
+          testAlreadyStarted = true;
+        } else {
+          throw err; // Re-throw if it's a different error
+        }
+      }
+
+      // Fetch test data regardless of whether start call succeeded
+      await fetchTestData(testId);
+
+      // Start the test in the store
+      startTest();
+      setPreventNavigation(true);
+
+      // If test was already started, ensure we have the correct state
+      if (testAlreadyStarted) {
+        console.log("ℹ️ Test was already started on server, resuming...");
+      }
+    } catch (err: any) {
+      console.error("❌ Error in startTest:", err);
+      setError(err?.response?.data?.message || "Failed to start test");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnswerChange = (
+    questionId: number,
+    answerId: string,
+    isMultiple: boolean
+  ) => {
+    const newAnswers = { ...answers };
+
+    if (isMultiple) {
+      const currentAnswers = newAnswers[questionId] || [];
+      const isSelected = currentAnswers.includes(answerId);
+
+      if (isSelected) {
+        newAnswers[questionId] = currentAnswers.filter((id) => id !== answerId);
+      } else {
+        newAnswers[questionId] = [...currentAnswers, answerId];
+      }
+    } else {
+      newAnswers[questionId] = [answerId];
+    }
+
+    // Update store with new answers
+    updateProgress(currentQuestionIndex, newAnswers);
+    setHasUnsavedChanges(true);
+  };
+
+  const nextQuestion = async () => {
+    await submitCurrentAnswer();
+
+    if (currentQuestionIndex < testData!.topic.quiz.questions.length - 1) {
+      const newIndex = currentQuestionIndex + 1;
+      updateProgress(newIndex, answers);
+    } else {
+      handleFinishTest();
+    }
+  };
+
+  const previousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      const newIndex = currentQuestionIndex - 1;
+      updateProgress(newIndex, answers);
+    }
+  };
+
+  const getUnansweredQuestions = () => {
+    if (!testData) return [];
+
+    const unanswered: number[] = [];
+    testData.topic.quiz.questions.forEach((question, index) => {
+      const hasAnswer = answers[question.id] && answers[question.id].length > 0;
+      if (!hasAnswer) {
+        unanswered.push(index);
+      }
+    });
+    return unanswered;
+  };
+
+  const navigateToQuestion = (questionIndex: number) => {
+    updateProgress(questionIndex, answers);
+    setShowUnansweredDialog(false);
+  };
+
+  const handleFinishTest = () => {
+    const unanswered = getUnansweredQuestions();
+    if (unanswered.length > 0) {
+      setUnansweredQuestions(unanswered);
+      setShowUnansweredDialog(true);
+    } else {
+      setShowConfirmDialog(true);
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -350,10 +605,6 @@ const PlacementTest = () => {
     if (!testData || !testStarted) return null;
     return testData.topic.quiz.questions[currentQuestionIndex];
   };
-
-  const progress = testData
-    ? ((currentQuestionIndex + 1) / testData.topic.quiz.questions.length) * 100
-    : 0;
 
   if (loading) {
     return (
@@ -386,7 +637,7 @@ const PlacementTest = () => {
     );
   }
 
-  if (testCompleted) {
+  if (testCompleted || isTestCompletedOnServer) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Box sx={{ textAlign: "center" }}>
@@ -491,7 +742,7 @@ const PlacementTest = () => {
                   size="large"
                   onClick={() => {
                     // Start test button clicked
-                    startTest();
+                    handleStartTest();
                   }}
                   sx={{ px: 6, py: 2, fontSize: "1.1rem" }}
                 >
@@ -573,9 +824,11 @@ const PlacementTest = () => {
         {currentQuestion && (
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" sx={{ mb: 3, color: "primary.main" }}>
-                {currentQuestion.name}
-              </Typography>
+              {currentQuestion.type !== "fill-in-blank" && (
+                <Typography variant="h6" sx={{ mb: 3, color: "primary.main" }}>
+                  {currentQuestion.name}
+                </Typography>
+              )}
 
               {currentQuestion.type === "single-choice" && (
                 <RadioGroup
@@ -629,16 +882,176 @@ const PlacementTest = () => {
               )}
 
               {currentQuestion.type === "fill-in-blank" && (
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Enter your answer..."
-                  value={answers[currentQuestion.id]?.[0] || ""}
-                  onChange={(e) =>
-                    handleTextAnswerChange(currentQuestion.id, e.target.value)
-                  }
-                  sx={{ mt: 2 }}
-                />
+                <Box sx={{ mt: 0 }}>
+                  {/* Question header for fill-in-blank */}
+                  <Typography
+                    variant="h6"
+                    sx={{ mb: 3, color: "primary.main" }}
+                  >
+                    Complete the sentence:
+                  </Typography>
+
+                  {/* Render question with interactive blanks */}
+                  <Box
+                    sx={{
+                      mb: 3,
+                      fontSize: "1.1rem",
+                      lineHeight: 1.8,
+                      p: 2,
+                      backgroundColor: "grey.25",
+                      borderRadius: "12px",
+                      border: "1px solid",
+                      borderColor: "grey.200",
+                    }}
+                  >
+                    {currentQuestion.name
+                      .split('{"BLANK"}')
+                      .map((part, index, parts) => (
+                        <span key={index}>
+                          {part}
+                          {index < parts.length - 1 && (
+                            <TextField
+                              variant="outlined"
+                              size="small"
+                              value={
+                                answers[currentQuestion.id]?.[index]
+                                  ? currentQuestion.answers.find(
+                                      (ans) =>
+                                        ans.id.toString() ===
+                                        answers[currentQuestion.id]?.[index]
+                                    )?.name || ""
+                                  : ""
+                              }
+                              placeholder="___"
+                              sx={{
+                                mx: 1,
+                                "& .MuiOutlinedInput-root": {
+                                  minWidth: "100px",
+                                  height: "40px",
+                                  backgroundColor: "grey.50",
+                                  borderRadius: "8px",
+                                  "& fieldset": {
+                                    borderColor: "grey.300",
+                                    borderWidth: 1,
+                                    borderStyle: "dashed",
+                                  },
+                                  "&:hover fieldset": {
+                                    borderColor: "grey.400",
+                                  },
+                                  "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                    borderStyle: "solid",
+                                  },
+                                },
+                                "& .MuiOutlinedInput-input": {
+                                  textAlign: "center",
+                                  fontWeight: "500",
+                                  color: answers[currentQuestion.id]?.[index]
+                                    ? "text.primary"
+                                    : "grey.500",
+                                  cursor: "pointer",
+                                  fontSize: "0.95rem",
+                                  "&::placeholder": {
+                                    color: "grey.400",
+                                    opacity: 0.8,
+                                    fontStyle: "italic",
+                                  },
+                                },
+                              }}
+                              InputProps={{
+                                readOnly: true,
+                              }}
+                              onClick={() => {
+                                // Focus will be handled by clicking answer options
+                              }}
+                            />
+                          )}
+                        </span>
+                      ))}
+                  </Box>
+
+                  {/* Answer options as clickable chips */}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 2,
+                      color: "text.secondary",
+                      fontWeight: "500",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    💡 Click on an answer to fill in the blank:
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1.5,
+                      p: 2,
+                      backgroundColor: "background.paper",
+                      borderRadius: "8px",
+                      border: "1px solid",
+                      borderColor: "grey.200",
+                    }}
+                  >
+                    {currentQuestion.answers.map((answer) => {
+                      const isSelected = answers[currentQuestion.id]?.includes(
+                        answer.id.toString()
+                      );
+                      return (
+                        <Button
+                          key={answer.id}
+                          variant={isSelected ? "contained" : "outlined"}
+                          size="medium"
+                          onClick={() => {
+                            // For fill-in-blank with options, treat it as single choice
+                            // Store the answer ID, not the text
+                            const newAnswers = {
+                              ...answers,
+                              [currentQuestion.id]: [answer.id.toString()],
+                            };
+                            updateProgress(currentQuestionIndex, newAnswers);
+                            setHasUnsavedChanges(true);
+                          }}
+                          sx={{
+                            textTransform: "none",
+                            fontWeight: isSelected ? "600" : "500",
+                            minWidth: "80px",
+                            px: 3,
+                            py: 1.5,
+                            borderRadius: "20px",
+                            fontSize: "0.95rem",
+                            backgroundColor: isSelected
+                              ? "primary.main"
+                              : "grey.100",
+                            color: isSelected ? "white" : "text.primary",
+                            border: isSelected
+                              ? "2px solid transparent"
+                              : "2px solid",
+                            borderColor: isSelected
+                              ? "transparent"
+                              : "grey.300",
+                            "&:hover": {
+                              transform: "translateY(-2px)",
+                              boxShadow: isSelected ? 3 : 2,
+                              backgroundColor: isSelected
+                                ? "primary.dark"
+                                : "grey.200",
+                              borderColor: isSelected
+                                ? "transparent"
+                                : "grey.400",
+                            },
+                            transition: "all 0.2s ease-in-out",
+                          }}
+                        >
+                          {answer.name}
+                        </Button>
+                      );
+                    })}
+                  </Box>
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -765,6 +1178,64 @@ const PlacementTest = () => {
               disabled={submitting}
             >
               {submitting ? <CircularProgress size={20} /> : "Submit Test"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Resume Test Dialog */}
+        <Dialog
+          open={showResumeDialog}
+          onClose={() => setShowResumeDialog(false)}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <RestoreIcon color="primary" />
+            Resume Placement Test
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              You have a placement test in progress. Would you like to resume
+              from where you left off or start over?
+            </Typography>
+            {currentTest && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Progress:</strong> Question{" "}
+                  {currentTest.currentQuestionIndex + 1} of{" "}
+                  {currentTest.testData?.topic.quiz.questions.length || 0}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Time Remaining:</strong>{" "}
+                  {formatTime(currentTest.timeLeft)}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Answers Saved:</strong>{" "}
+                  {Object.keys(currentTest.answers).length} questions
+                </Typography>
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                clearTest();
+                setShowResumeDialog(false);
+                setPreventNavigation(false);
+                // Force re-initialization
+                setIsInitializing(true);
+              }}
+              color="inherit"
+            >
+              Start Over
+            </Button>
+            <Button
+              onClick={() => {
+                setShowResumeDialog(false);
+                setPreventNavigation(true);
+                // Test data is already loaded from store
+              }}
+              variant="contained"
+            >
+              Resume Test
             </Button>
           </DialogActions>
         </Dialog>

@@ -8,6 +8,8 @@ export interface PlacementTest {
   total_mark: number;
   pass_mark: number;
   expire_date: string;
+  submit_at: boolean;
+  is_visible_result: number;
   created_at: string;
 }
 
