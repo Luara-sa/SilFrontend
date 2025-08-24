@@ -536,7 +536,9 @@ const PlacementTest = () => {
       const isSelected = currentAnswers.includes(answerId);
 
       if (isSelected) {
-        newAnswers[questionId] = currentAnswers.filter((id) => id !== answerId);
+        newAnswers[questionId] = currentAnswers.filter(
+          (id: string) => id !== answerId
+        );
       } else {
         newAnswers[questionId] = [...currentAnswers, answerId];
       }
@@ -571,12 +573,15 @@ const PlacementTest = () => {
     if (!testData) return [];
 
     const unanswered: number[] = [];
-    testData.topic.quiz.questions.forEach((question, index) => {
-      const hasAnswer = answers[question.id] && answers[question.id].length > 0;
-      if (!hasAnswer) {
-        unanswered.push(index);
+    testData.topic.quiz.questions.forEach(
+      (question: QuizQuestion, index: number) => {
+        const hasAnswer =
+          answers[question.id] && answers[question.id].length > 0;
+        if (!hasAnswer) {
+          unanswered.push(index);
+        }
       }
-    });
+    );
     return unanswered;
   };
 

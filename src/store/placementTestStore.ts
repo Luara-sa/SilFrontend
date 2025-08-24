@@ -1,5 +1,6 @@
 import create from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+import type { StateCreator } from "zustand";
 import { PlacementTestDetail, QuestionAnswer } from "services/placement-test.service";
 
 export interface PlacementTestProgress {
@@ -39,8 +40,12 @@ interface PlacementTestStoreInterface {
 
 const STORAGE_KEY = "placement_test_progress";
 
-export const placementTestStore = create<PlacementTestStoreInterface>(
-  subscribeWithSelector((set, get) => ({
+const placementTestSlice: StateCreator<
+  PlacementTestStoreInterface,
+  [["zustand/subscribeWithSelector", never]],
+  [],
+  PlacementTestStoreInterface
+> = (set, get) => ({
     currentTest: null,
 
     initializeTest: (testId: number, testData: PlacementTestDetail, totalTime: number) => {
@@ -204,7 +209,10 @@ export const placementTestStore = create<PlacementTestStoreInterface>(
         get().saveToLocalStorage();
       }
     },
-  }))
+  });
+
+export const placementTestStore = create<PlacementTestStoreInterface>()(
+  subscribeWithSelector(placementTestSlice)
 );
 
 // Subscribe to visibility changes to track when user leaves/returns
