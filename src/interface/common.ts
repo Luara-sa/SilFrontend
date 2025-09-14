@@ -591,10 +591,46 @@ export interface CourseEnrollmentStatusResponse {
 
 export interface CourseTopic {
   id: number;
-  type: "video" | "reading" | "pdf";
+  type: "video" | "reading" | "pdf" | "quiz";
   name: string;
   description: string | null;
   video_url: string | null;
+  quiz?: TopicQuiz;
+  progress_status: "completed" | null;
+  is_public: number;
+}
+
+export interface TopicQuiz {
+  id: number;
+  name: string;
+  total_mark: number;
+  pass_mark: number;
+  expire_date: string;
+  duration: string; // in minutes
+  questions_count: number;
+  questions: TopicQuizQuestion[];
+}
+
+export interface TopicQuizQuestion {
+  id: number;
+  type: "single-choice" | "multiple-choice" | "fill-in-blank" | "true-false";
+  name: string; // This is the question text
+  answers: TopicQuizAnswer[];
+}
+
+export interface TopicQuizAnswer {
+  id: number;
+  name: string; // This is the answer text
+}
+
+export interface CourseSession {
+  id: number;
+  name: string;
+  description: string | null;
+  zoom_link: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  date: string | null;
 }
 
 export interface CourseChapter {
@@ -602,6 +638,7 @@ export interface CourseChapter {
   name: string;
   topics_count: number;
   topics: CourseTopic[];
+  sessions?: CourseSession[];
 }
 
 export interface CourseCurriculumResponse {

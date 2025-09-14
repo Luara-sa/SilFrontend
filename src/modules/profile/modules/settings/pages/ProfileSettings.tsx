@@ -22,8 +22,9 @@ export const ProfileSettings = () => {
   );
 
   const validationSchema = Yup.object().shape({
-    first_name: Yup.string().required("First name is required"),
-    last_name: Yup.string().required("Last name is required"),
+    // Make name fields optional when only updating image
+    first_name: Yup.string().optional(),
+    last_name: Yup.string().optional(),
     // Removed validation for disabled fields
   });
 

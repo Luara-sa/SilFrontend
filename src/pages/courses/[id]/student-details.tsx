@@ -21,6 +21,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  SelectChangeEvent,
 } from "@mui/material";
 import {
   CalendarToday,
@@ -44,11 +45,13 @@ import {
 import { CourseGroup, CourseLevel, TargetAudience } from "interface/common";
 import { Seo, PaymentModal } from "components/shared";
 import useTranslation from "next-translate/useTranslation";
+import { useAuth } from "contexts/AuthContext";
 
 const StudentCourseDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation("course");
+  const { isAuthenticated } = useAuth();
 
   const { courseData, loading, error, refetch } = useDetailedStudentCourse(
     id ? String(id) : null
@@ -79,7 +82,7 @@ const StudentCourseDetailsPage = () => {
   useEffect(() => {
     resetEnrollment();
     setSelectedGroupId(null);
-  }, [id]); // Remove resetEnrollment from dependencies
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -154,6 +157,13 @@ const StudentCourseDetailsPage = () => {
 
   const handleEnrollment = async () => {
     if (!courseData) return;
+
+    // Check if user is authenticated, if not redirect to login
+    if (!isAuthenticated) {
+      const currentPath = `/courses/${id}/student-details`;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
 
     // Check if course is paid, open payment modal
     const isPaidCourse =
@@ -386,143 +396,148 @@ const StudentCourseDetailsPage = () => {
                         </CardContent>
                       </Card>
 
-                      {/* Purchase Details Card */}
-                      {enrollmentStatus.purchase_details && (
-                        <Card sx={{ mb: 2 }}>
-                          <CardContent>
-                            <Typography
-                              variant="h6"
-                              gutterBottom
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <Receipt color="primary" />
-                              Purchase Details
-                            </Typography>
+                      {/* Purchase Details Card - Only show for paid courses */}
+                      {enrollmentStatus.purchase_details &&
+                        courseData.course_setting?.is_free !== 1 && (
+                          <Card sx={{ mb: 2 }}>
+                            <CardContent>
+                              <Typography
+                                variant="h6"
+                                gutterBottom
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <Receipt color="primary" />
+                                Purchase Details
+                              </Typography>
 
-                            <Grid container spacing={2}>
-                              <Grid item xs={12} sm={6}>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  Payment Method
-                                </Typography>
-                                <Chip
-                                  label={
-                                    enrollmentStatus.purchase_details.purchase
-                                      .payment_method === "bank_transfer"
-                                      ? "Bank Transfer"
-                                      : enrollmentStatus.purchase_details
-                                          .purchase.payment_method === "paymob"
-                                      ? "Credit Card"
-                                      : enrollmentStatus.purchase_details
-                                          .purchase.payment_method === "tamara"
-                                      ? "Tamara"
-                                      : enrollmentStatus.purchase_details
-                                          .purchase.payment_method
-                                  }
-                                  variant="outlined"
-                                  color="primary"
-                                  size="small"
-                                  sx={{ mt: 0.5 }}
-                                />
-                              </Grid>
+                              <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Payment Method
+                                  </Typography>
+                                  <Chip
+                                    label={
+                                      enrollmentStatus.purchase_details.purchase
+                                        .payment_method === "bank_transfer"
+                                        ? "Bank Transfer"
+                                        : enrollmentStatus.purchase_details
+                                            .purchase.payment_method ===
+                                          "paymob"
+                                        ? "Credit Card"
+                                        : enrollmentStatus.purchase_details
+                                            .purchase.payment_method ===
+                                          "tamara"
+                                        ? "Tamara"
+                                        : enrollmentStatus.purchase_details
+                                            .purchase.payment_method
+                                    }
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    sx={{ mt: 0.5 }}
+                                  />
+                                </Grid>
 
-                              <Grid item xs={12} sm={6}>
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                >
-                                  Payment Status
-                                </Typography>
-                                <Chip
-                                  label={
-                                    enrollmentStatus.purchase_details.purchase
-                                      .status
-                                  }
-                                  color={
-                                    enrollmentStatus.purchase_details.purchase
-                                      .status === "completed" ||
-                                    enrollmentStatus.purchase_details.purchase
-                                      .status === "paid" ||
-                                    enrollmentStatus.purchase_details.purchase
-                                      .status === "success"
-                                      ? "success"
-                                      : enrollmentStatus.purchase_details
-                                          .purchase.status === "pending"
-                                      ? "warning"
-                                      : "error"
-                                  }
-                                  size="small"
-                                  sx={{ mt: 0.5 }}
-                                  icon={
-                                    enrollmentStatus.purchase_details.purchase
-                                      .status === "pending" ? (
-                                      <Warning />
-                                    ) : undefined
-                                  }
-                                />
-                              </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    Payment Status
+                                  </Typography>
+                                  <Chip
+                                    label={
+                                      enrollmentStatus.purchase_details.purchase
+                                        .status
+                                    }
+                                    color={
+                                      enrollmentStatus.purchase_details.purchase
+                                        .status === "completed" ||
+                                      enrollmentStatus.purchase_details.purchase
+                                        .status === "paid" ||
+                                      enrollmentStatus.purchase_details.purchase
+                                        .status === "success"
+                                        ? "success"
+                                        : enrollmentStatus.purchase_details
+                                            .purchase.status === "pending"
+                                        ? "warning"
+                                        : "error"
+                                    }
+                                    size="small"
+                                    sx={{ mt: 0.5 }}
+                                    icon={
+                                      enrollmentStatus.purchase_details.purchase
+                                        .status === "pending" ? (
+                                        <Warning />
+                                      ) : undefined
+                                    }
+                                  />
+                                </Grid>
 
-                              {/* Show uploaded document for bank transfer */}
-                              {enrollmentStatus.purchase_details.purchase
-                                .payment_method === "bank_transfer" &&
-                                enrollmentStatus.purchase_details.document && (
-                                  <Grid item xs={12}>
-                                    <Typography
-                                      variant="body2"
-                                      color="text.secondary"
-                                      gutterBottom
-                                    >
-                                      Uploaded Document
-                                    </Typography>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                      startIcon={<CloudDownload />}
-                                      onClick={() =>
-                                        window.open(
+                                {/* Show uploaded document for bank transfer */}
+                                {enrollmentStatus.purchase_details.purchase
+                                  .payment_method === "bank_transfer" &&
+                                  enrollmentStatus.purchase_details
+                                    .document && (
+                                    <Grid item xs={12}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        gutterBottom
+                                      >
+                                        Uploaded Document
+                                      </Typography>
+                                      <Button
+                                        variant="outlined"
+                                        size="small"
+                                        startIcon={<CloudDownload />}
+                                        onClick={() =>
+                                          window.open(
+                                            enrollmentStatus.purchase_details
+                                              .document,
+                                            "_blank"
+                                          )
+                                        }
+                                        sx={{ textTransform: "none" }}
+                                      >
+                                        View Bank Transfer Receipt
+                                      </Button>
+                                    </Grid>
+                                  )}
+
+                                {/* Show installments if available */}
+                                {enrollmentStatus.purchase_details
+                                  .installments &&
+                                  enrollmentStatus.purchase_details.installments
+                                    .length > 0 && (
+                                    <Grid item xs={12}>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        gutterBottom
+                                      >
+                                        Installments
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {
                                           enrollmentStatus.purchase_details
-                                            .document,
-                                          "_blank"
-                                        )
-                                      }
-                                      sx={{ textTransform: "none" }}
-                                    >
-                                      View Bank Transfer Receipt
-                                    </Button>
-                                  </Grid>
-                                )}
-
-                              {/* Show installments if available */}
-                              {enrollmentStatus.purchase_details.installments &&
-                                enrollmentStatus.purchase_details.installments
-                                  .length > 0 && (
-                                  <Grid item xs={12}>
-                                    <Typography
-                                      variant="body2"
-                                      color="text.secondary"
-                                      gutterBottom
-                                    >
-                                      Installments
-                                    </Typography>
-                                    <Typography variant="body2">
-                                      {
-                                        enrollmentStatus.purchase_details
-                                          .installments.length
-                                      }{" "}
-                                      installment(s) available
-                                    </Typography>
-                                  </Grid>
-                                )}
-                            </Grid>
-                          </CardContent>
-                        </Card>
-                      )}
+                                            .installments.length
+                                        }{" "}
+                                        installment(s) available
+                                      </Typography>
+                                    </Grid>
+                                  )}
+                              </Grid>
+                            </CardContent>
+                          </Card>
+                        )}
 
                       <Button
                         variant="contained"
@@ -551,14 +566,29 @@ const StudentCourseDetailsPage = () => {
                                     ? selectedGroupId.toString()
                                     : ""
                                 }
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  setSelectedGroupId(
-                                    value === "" ? null : Number(value)
-                                  );
+                                onChange={(
+                                  event: SelectChangeEvent<string>
+                                ) => {
+                                  const value = event.target.value;
+                                  if (value === "") {
+                                    setSelectedGroupId(null);
+                                  } else {
+                                    const numericValue = Number(value);
+                                    if (!isNaN(numericValue)) {
+                                      setSelectedGroupId(numericValue);
+                                    }
+                                  }
                                 }}
                                 label="Select Schedule Group"
                                 displayEmpty
+                                MenuProps={{
+                                  PaperProps: {
+                                    style: {
+                                      maxHeight: 300,
+                                      zIndex: 9999,
+                                    },
+                                  },
+                                }}
                               >
                                 <MenuItem value="">
                                   <em>Select a group</em>
@@ -568,23 +598,8 @@ const StudentCourseDetailsPage = () => {
                                     key={group.id}
                                     value={group.id.toString()}
                                   >
-                                    <Box>
-                                      <Typography
-                                        variant="body2"
-                                        fontWeight="500"
-                                      >
-                                        {group.name}
-                                      </Typography>
-                                      <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                      >
-                                        {formatDate(group.start_date)} -{" "}
-                                        {formatDate(group.end_date)}
-                                        {group.schedules.length > 0 &&
-                                          ` • ${group.schedules[0].day} ${group.schedules[0].start_time}-${group.schedules[0].end_time}`}
-                                      </Typography>
-                                    </Box>
+                                    {group.name} ({formatDate(group.start_date)}{" "}
+                                    - {formatDate(group.end_date)})
                                   </MenuItem>
                                 ))}
                               </Select>

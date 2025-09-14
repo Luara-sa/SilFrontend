@@ -16,11 +16,11 @@ export const studentSideBar = [
     index: "myCourses",
     icon: <img src="/assets/icons/my-course.svg" />,
   },
-  {
-    label: { en: "My Paths", ar: "مساراتي" },
-    index: "myPaths",
-    icon: <img src="/assets/icons/my-paths.svg" />,
-  },
+  // {
+  //   label: { en: "My Paths", ar: "مساراتي" },
+  //   index: "myPaths",
+  //   icon: <img src="/assets/icons/my-paths.svg" />,
+  // },
   {
     label: { en: "My Tests", ar: "إختباراتي" },
     index: "myTests",

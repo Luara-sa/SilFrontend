@@ -24,6 +24,8 @@ interface Props {
   lessonCount?: number;
   discount: number;
   navigateTo?: string; // Optional custom navigation URL
+  isEnrolled?: boolean; // Whether user is enrolled in this course
+  categoryName?: string; // Category name to display below course name
   // New pricing props for better price display
   originalPrice?: number;
   discountedPrice?: number;
@@ -42,6 +44,8 @@ export const CourseCard = (props: Props) => {
     price,
     rate,
     navigateTo,
+    isEnrolled,
+    categoryName,
     originalPrice,
     discountedPrice,
     currency,
@@ -135,7 +139,7 @@ export const CourseCard = (props: Props) => {
                     xs: name && name?.length > 29 ? "1.2rem" : "2.2rem",
                     md: "initial",
                   },
-                  height: { xs: "auto", md: "3rem" },
+                  // height: { xs: "auto", md: "3rem" },
                 }}
               >
                 {name && name?.length > 39
@@ -144,6 +148,19 @@ export const CourseCard = (props: Props) => {
               </Typography>
             </Link>
           </BootstrapTooltip>
+          {categoryName && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                fontSize: "0.75rem",
+                mt: 0.5,
+                fontWeight: 400,
+              }}
+            >
+              {categoryName}
+            </Typography>
+          )}
           <Box sx={{ pt: { xs: 1, md: 2 } }}>
             <Rating
               name="simple-controlled"
@@ -203,9 +220,11 @@ export const CourseCard = (props: Props) => {
         >
           <Link href={courseUrl}>
             <Button variant="default" sx={{ fontSize: [10, 10, 11, 12, 13] }}>
-              {props.price && props.price > 0
-                ? t("view course")
-                : t("reservation")}
+              {isEnrolled
+                ? t("View Course")
+                : props.price && props.price > 0
+                ? t("View Course")
+                : t("Enroll")}
             </Button>
           </Link>
           <CoursePrice

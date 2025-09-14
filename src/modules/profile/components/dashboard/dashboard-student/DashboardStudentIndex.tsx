@@ -23,15 +23,15 @@ export const DashboardStudentIndex = () => {
     }
   });
 
-  useEffect(() => {
-    _StudentRoleService
-      .getProfileDashboard()
-      .then((res) => {
-        setData(res.result, "dashboard");
-      })
-      .catch((err) => console.log(err));
-    return () => {};
-  }, []);
+  // useEffect(() => {
+  //   _StudentRoleService
+  //     .getProfileDashboard()
+  //     .then((res) => {
+  //       setData(res.result, "dashboard");
+  //     })
+  //     .catch((err) => console.log(err));
+  //   return () => {};
+  // }, []);
 
   return (
     <Box

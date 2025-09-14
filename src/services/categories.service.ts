@@ -20,6 +20,42 @@ class CategoriesService {
     }).then((res) => res.data);
   }
 
+  // Public method to fetch categories without authentication
+  getPublicStudentCategories(page: number = 1, per_page: number = 15): Promise<StudentCategoriesResponse> {
+    return _axios.get<StudentCategoriesResponse>(`student/categories`, {
+      params: { page, per_page },
+      headers: {
+        // Explicitly remove authorization header for public access
+        Authorization: undefined
+      }
+    }).then((res) => res.data).catch((error) => {
+      // For public access, don't redirect on 401, just return empty data
+      if (error.response?.status === 401) {
+        console.log('Public categories access - no authentication required');
+      }
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch categories',
+        data: {
+          content: [],
+          pagination: {
+            current_page: 1,
+            from: 0,
+            last_page: 1,
+            per_page: 15,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
+    });
+  }
+
   // Method to fetch all student categories across all pages
   async getAllStudentCategories(): Promise<StudentCategoriesResponse> {
     try {

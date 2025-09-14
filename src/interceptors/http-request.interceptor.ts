@@ -6,8 +6,26 @@ export const HttpRequestInterceptor = () => {
     function (request) {
       // Do something before request is sent
       const token = _AuthService.getJwtToken();
-      // console.log(token);
-      if (request.headers) {
+      
+      // List of endpoints that don't require authentication
+      const publicEndpoints = [
+        'student/courses',
+        'student/categories',
+        'getCourses',
+        'getCategories'
+      ];
+      
+      // Check if this is a public endpoint
+      const isPublicEndpoint = publicEndpoints.some(endpoint => 
+        request.url?.includes(endpoint)
+      );
+      
+      // Only add authorization header if we have a token and it's not a public endpoint
+      // OR if it's not a public endpoint (require auth for all other endpoints)
+      if (request.headers && token && !isPublicEndpoint) {
+        request.headers.Authorization = `Bearer ${token}`;
+      } else if (request.headers && token && isPublicEndpoint) {
+        // For public endpoints, add token if available but don't require it
         request.headers.Authorization = `Bearer ${token}`;
       }
 

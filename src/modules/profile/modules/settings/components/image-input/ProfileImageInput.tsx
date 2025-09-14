@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 
 import { profileSettingsStore } from "store/profileSettingsStore";
+import { useMe } from "hooks/useMe";
 
 import PhotoCameraFrontOutlinedIcon from "@mui/icons-material/PhotoCameraFrontOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -16,6 +17,7 @@ export const ProfileImageInput = ({
   value?: string;
   personalImage?: string;
 }) => {
+  const { me } = useMe();
   const [profileSettingForm, setProfileSettingForm] = profileSettingsStore(
     (state) => [state.profileSettingForm, state.setProfileSettingForm]
   );
@@ -30,6 +32,10 @@ export const ProfileImageInput = ({
         updatedImageForDisplay: URL.createObjectURL(event.target.files[0]),
         updatedImageForApi:
           event?.target?.files !== null ? event.target.files[0] : "",
+        // Ensure we have the current names when updating image
+        first_name: profileSettingForm?.first_name || me?.first_name,
+        last_name: profileSettingForm?.last_name || me?.last_name,
+        profileChanged: true,
       });
     }
   };

@@ -581,7 +581,7 @@ export const useTopicContent = (
   courseId: string | number | null,
   chapterId: string | number | null,
   topicId: string | number | null,
-  topicType: "video" | "reading" | null
+  topicType: "video" | "reading" | "quiz" | null
 ) => {
   const [topicContent, setTopicContent] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);

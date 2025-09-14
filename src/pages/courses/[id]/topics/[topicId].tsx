@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import {
   Box,
@@ -15,10 +15,11 @@ import {
   ArrowBack,
   PlayCircleOutline,
   MenuBook,
-  CheckCircle,
   Lock,
   ShoppingCart,
   PictureAsPdf,
+  Quiz,
+  Circle,
 } from "@mui/icons-material";
 import { useCourseCurriculum, useTopicContent } from "hooks/useStudentCourses";
 import { CourseTopic } from "interface/common";
@@ -28,6 +29,8 @@ import {
   getIframePermissions,
 } from "utils/videoUrlConverter";
 import { toast } from "react-toastify";
+import { TopicQuizComponent } from "components/shared/quiz/TopicQuizComponent";
+import { useQuizProgressStore } from "store/quizProgressStore";
 
 const TopicPage = () => {
   const router = useRouter();
@@ -76,7 +79,8 @@ const TopicPage = () => {
 
   // Fetch detailed topic content based on type
   // Use type from query params if available, otherwise use current topic type
-  const topicType = (queryType as "video" | "reading") || currentTopic?.type;
+  const topicType =
+    (queryType as "video" | "reading" | "quiz") || currentTopic?.type;
 
   const {
     topicContent,
@@ -87,11 +91,117 @@ const TopicPage = () => {
     id ? String(id) : null,
     chapterId,
     topicId ? String(topicId) : null,
-    topicType as "video" | "reading" | null
+    topicType as "video" | "reading" | "quiz" | null
   );
 
   const loading = curriculumLoading || contentLoading;
   const error = curriculumError || contentError;
+
+  // Function to find and navigate to next topic
+  const navigateToNextTopic = useCallback(() => {
+    if (!curriculum?.chapters || !currentTopic || !chapterId) return;
+
+    let foundCurrent = false;
+    let nextTopic = null;
+    let nextChapterId = null;
+
+    // Find current topic and get the next one
+    for (const chapter of curriculum.chapters) {
+      for (let i = 0; i < chapter.topics.length; i++) {
+        const topic = chapter.topics[i];
+
+        if (foundCurrent) {
+          // This is the next topic
+          nextTopic = topic;
+          nextChapterId = chapter.id;
+          break;
+        }
+
+        if (topic.id === currentTopic.id && chapter.id === chapterId) {
+          foundCurrent = true;
+        }
+      }
+
+      if (nextTopic) break;
+    }
+
+    if (nextTopic && nextChapterId) {
+      // Navigate to next topic
+      router.push(
+        `/courses/${id}/topics/${nextTopic.id}?chapterId=${nextChapterId}&type=${nextTopic.type}`
+      );
+    } else {
+      // No more topics, go back to curriculum
+      toast.success("Course completed! Great job!");
+      router.push(`/courses/${id}/curriculum`);
+    }
+  }, [curriculum, currentTopic, chapterId, id, router]);
+
+  // Function to check if next topic is accessible
+  const isNextTopicAccessible = useCallback(() => {
+    if (!curriculum?.chapters || !currentTopic || !chapterId) return false;
+
+    let foundCurrent = false;
+    let nextTopic = null;
+
+    // Find current topic and get the next one
+    for (const chapter of curriculum.chapters) {
+      for (let i = 0; i < chapter.topics.length; i++) {
+        const topic = chapter.topics[i];
+
+        if (foundCurrent) {
+          nextTopic = topic;
+          break;
+        }
+
+        if (topic.id === currentTopic.id && chapter.id === chapterId) {
+          foundCurrent = true;
+        }
+      }
+
+      if (nextTopic) break;
+    }
+
+    if (!nextTopic) return false; // No next topic exists
+
+    // Find the index of next topic in its chapter
+    let nextTopicIndex = -1;
+
+    for (const chapter of curriculum.chapters) {
+      const topicIndex = chapter.topics.findIndex(
+        (t: CourseTopic) => t.id === nextTopic.id
+      );
+      if (topicIndex >= 0) {
+        nextTopicIndex = topicIndex;
+        break;
+      }
+    }
+
+    if (nextTopicIndex < 0) return false;
+
+    // First topic in any chapter is always accessible
+    if (nextTopicIndex === 0) return true;
+
+    // For subsequent topics, check if previous topic requirements are met
+    // Find the previous topic in the same chapter
+    for (const chapter of curriculum.chapters) {
+      const topics = chapter.topics;
+      const nextTopicIdx = topics.findIndex(
+        (t: CourseTopic) => t.id === nextTopic.id
+      );
+
+      if (nextTopicIdx > 0) {
+        const previousTopic = topics[nextTopicIdx - 1];
+
+        // Check if previous topic is completed using progress_status from API
+        return previousTopic.progress_status === "completed";
+      }
+    }
+
+    return true;
+  }, [curriculum, currentTopic, chapterId]);
+
+  // Manual mark as complete functionality will be handled by button click
 
   if (loading) {
     return (
@@ -190,8 +300,10 @@ const TopicPage = () => {
         return <MenuBook color="secondary" />;
       case "pdf":
         return <PictureAsPdf color="error" />;
+      case "quiz":
+        return <Quiz color="warning" />;
       default:
-        return <CheckCircle color="inherit" />;
+        return <Circle color="inherit" />;
     }
   };
 
@@ -203,6 +315,8 @@ const TopicPage = () => {
         return "secondary";
       case "pdf":
         return "error";
+      case "quiz":
+        return "warning";
       default:
         return "default";
     }
@@ -429,6 +543,70 @@ const TopicPage = () => {
                         </Box>
                       )}
                   </Box>
+                ) : topicContent.type === "quiz" ? (
+                  <Box>
+                    {/* Quiz Description */}
+                    {topicContent.description && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body1" color="text.secondary">
+                          {topicContent.description}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {topicContent.quiz ? (
+                      <TopicQuizComponent
+                        courseId={parseInt(String(id))}
+                        chapterId={parseInt(String(chapterId))}
+                        topicId={parseInt(String(topicId))}
+                        quiz={topicContent.quiz}
+                        onQuizComplete={(passed, score) => {
+                          console.log(
+                            `Quiz completed: ${
+                              passed ? "Passed" : "Failed"
+                            }, Score: ${score}`
+                          );
+                          if (passed) {
+                            toast.success(
+                              "Quiz completed successfully! Moving to next topic..."
+                            );
+                            // Navigate to next topic after successful quiz completion
+                            setTimeout(() => {
+                              navigateToNextTopic();
+                            }, 2000); // Longer delay to show the success message
+                          } else {
+                            toast.error(
+                              "Quiz not passed. Please try again to proceed to the next topic."
+                            );
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{ textAlign: "center", py: 4 }}>
+                        <Alert severity="info" sx={{ mb: 3 }}>
+                          No quiz content available for this topic yet.
+                        </Alert>
+
+                        {/* Navigate to next topic button */}
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="large"
+                          disabled={!isNextTopicAccessible()}
+                          onClick={() => {
+                            if (isNextTopicAccessible()) {
+                              navigateToNextTopic();
+                            }
+                          }}
+                          sx={{ minWidth: 200 }}
+                        >
+                          {isNextTopicAccessible()
+                            ? "Next Topic"
+                            : "Complete Previous Topics"}
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
                 ) : (
                   <Box sx={{ textAlign: "center", py: 4 }}>
                     <Typography variant="h6" color="text.secondary">
@@ -464,15 +642,17 @@ const TopicPage = () => {
           </Button>
           <Button
             variant="contained"
+            color="primary"
+            disabled={!isNextTopicAccessible()}
             onClick={() => {
-              // Mark topic as completed (you can add this functionality later)
-              // show a toast message
-              toast.success("Topic completed!");
-              // show a modal to confirm the action
-              // show a modal to confirm the action
+              if (isNextTopicAccessible()) {
+                navigateToNextTopic();
+              }
             }}
           >
-            Mark as Complete
+            {isNextTopicAccessible()
+              ? "Next Topic"
+              : "Complete Previous Topics"}
           </Button>
         </Box>
       </Box>

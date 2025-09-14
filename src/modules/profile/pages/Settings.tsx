@@ -99,12 +99,21 @@ export const Settings = () => {
           profile_img?: File;
         } = {};
 
+        // Always send current names when updating profile, even if just updating image
         if (profileSettingForm?.first_name) {
           profileUpdateData.first_name = profileSettingForm.first_name;
+        } else if (me?.first_name && profileSettingForm?.updatedImageForApi) {
+          // If only updating image, send current first name
+          profileUpdateData.first_name = me.first_name;
         }
+
         if (profileSettingForm?.last_name) {
           profileUpdateData.last_name = profileSettingForm.last_name;
+        } else if (me?.last_name && profileSettingForm?.updatedImageForApi) {
+          // If only updating image, send current last name
+          profileUpdateData.last_name = me.last_name;
         }
+
         if (profileSettingForm?.updatedImageForApi) {
           profileUpdateData.profile_img = profileSettingForm.updatedImageForApi;
         }

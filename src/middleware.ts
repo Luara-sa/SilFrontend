@@ -12,11 +12,11 @@ const publicRoutes = [
   '/contact-us',
   '/privacy-policy',
   '/terms-of-service',
+  '/courses',
 ];
 
 const protectedRoutes = [
   '/profile',
-  '/courses',
   '/checkout',
   '/placement-test',
   '/test',

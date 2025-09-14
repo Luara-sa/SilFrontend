@@ -59,6 +59,46 @@ class CourseService {
     });
   }
 
+  // Public method to fetch courses without authentication
+  getPublicStudentCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
+    const url = `student/courses?page=${page}&per_page=${perPage}`;
+    
+    // Create a request without auth headers
+    return _axios.get<any>(url, {
+      headers: {
+        // Explicitly remove authorization header for public access
+        Authorization: undefined
+      }
+    }).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      // For public access, don't redirect on 401, just return empty data
+      if (error.response?.status === 401) {
+        console.log('Public course access - no authentication required');
+      }
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch courses',
+        data: {
+          content: [],
+          pagination: {
+            current_page: 1,
+            from: 0,
+            last_page: 1,
+            per_page: 15,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
+    });
+  }
+
   // Method to fetch all courses for frontend filtering (legacy)
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
     return _axios.get<any>('student/courses?per_page=1000').then((res) => {
@@ -314,15 +354,39 @@ class CourseService {
     });
   }
 
+  // NEW: Method to get quiz topic content
+  getQuizTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
+    const url = `student/courses/${courseId}/curriculum/quiz/chapters/${chapterId}/topics/${topicId}`;
+    
+    return _axios.get<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
   // NEW: Generic method to get topic content based on type
-  getTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number, topicType: 'video' | 'reading'): Promise<any> {
+  getTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number, topicType: 'video' | 'reading' | 'quiz'): Promise<any> {
     if (topicType === 'video') {
       return this.getVideoTopicContent(courseId, chapterId, topicId);
     } else if (topicType === 'reading') {
       return this.getReadingTopicContent(courseId, chapterId, topicId);
+    } else if (topicType === 'quiz') {
+      return this.getQuizTopicContent(courseId, chapterId, topicId);
     } else {
       throw new Error(`Unsupported topic type: ${topicType}`);
     }
+  }
+
+  // Method to mark topic as viewed
+  markTopicAsViewed(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
+    const url = `student/courses/${courseId}/curriculum/chapters/${chapterId}/topics/${topicId}/mark-viewed`;
+    
+    return _axios.post<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
   }
 
   // NEW: Methods specifically for My Courses (enrolled courses)

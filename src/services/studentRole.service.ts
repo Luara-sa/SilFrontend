@@ -105,9 +105,9 @@ class StudentRoleService {
       .get<any>(`checkOrderAvailability/${id}`)
       .then((res) => res.data);
   }
-  getProfileDashboard(): Promise<RootObj<IndexObj2<MyDashboard[]>>> {
-    return _axios.get<any>(`getDasboardProfileData`).then((res) => res.data);
-  }
+  // getProfileDashboard(): Promise<RootObj<IndexObj2<MyDashboard[]>>> {
+  //   return _axios.get<any>(`getDasboardProfileData`).then((res) => res.data);
+  // }
 
   //   getTestDetailsbyId(id: string): Promise<RootObj<TestType>> {
   //     return _axios.get<any>(`getTestDetailsbyId/${id}`).then((res) => res.data);

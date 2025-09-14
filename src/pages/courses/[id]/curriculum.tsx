@@ -26,10 +26,15 @@ import {
   School,
   ShoppingCart,
   Lock,
+  CheckCircle,
   PictureAsPdf,
+  Quiz,
+  VideoCall,
+  AccessTime,
+  CalendarToday,
 } from "@mui/icons-material";
 import { useCourseCurriculum } from "hooks/useStudentCourses";
-import { CourseChapter, CourseTopic } from "interface/common";
+import { CourseChapter, CourseTopic, CourseSession } from "interface/common";
 import { Seo, HtmlRenderer } from "components/shared";
 import useTranslation from "next-translate/useTranslation";
 
@@ -138,6 +143,8 @@ const CourseCurriculumPage = () => {
         return <MenuBook color="secondary" />;
       case "pdf":
         return <PictureAsPdf color="error" />;
+      case "quiz":
+        return <Quiz color="warning" />;
       default:
         return <School color="inherit" />;
     }
@@ -151,6 +158,8 @@ const CourseCurriculumPage = () => {
         return "secondary";
       case "pdf":
         return "error";
+      case "quiz":
+        return "warning";
       default:
         return "default";
     }
@@ -231,23 +240,124 @@ const CourseCurriculumPage = () => {
             <AccordionDetails>
               <List>
                 {chapter.topics.map(
-                  (topic: CourseTopic, topicIndex: number) => (
-                    <React.Fragment key={topic.id}>
+                  (topic: CourseTopic, topicIndex: number) => {
+                    // Check if this topic should be accessible
+                    const isFirstTopic = topicIndex === 0;
+
+                    // Check if previous topic is completed (for progression)
+                    let isAccessible = isFirstTopic;
+                    let isCompleted = topic.progress_status === "completed";
+
+                    if (!isFirstTopic && topicIndex > 0) {
+                      const previousTopic = chapter.topics[topicIndex - 1];
+                      // Check if previous topic is completed using progress_status from API
+                      isAccessible =
+                        previousTopic.progress_status === "completed";
+                    }
+
+                    const isQuizTopic = topic.type === "quiz";
+
+                    return (
+                      <React.Fragment key={topic.id}>
+                        <ListItem
+                          sx={{
+                            cursor: isAccessible ? "pointer" : "not-allowed",
+                            opacity: isAccessible ? 1 : 0.5,
+                            "&:hover": isAccessible
+                              ? {
+                                  backgroundColor: "action.hover",
+                                }
+                              : {},
+                            borderRadius: 1,
+                            mb: 1,
+                          }}
+                          onClick={() => {
+                            if (!isAccessible) return;
+                            // Handle topic click - navigate to topic page with chapter context
+                            router.push(
+                              `/courses/${id}/topics/${topic.id}?chapterId=${chapter.id}&type=${topic.type}`
+                            );
+                          }}
+                        >
+                          <ListItemIcon>
+                            {!isAccessible ? (
+                              <Lock color="disabled" />
+                            ) : isCompleted ? (
+                              <CheckCircle color="success" />
+                            ) : (
+                              getTopicIcon(topic.type)
+                            )}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <Typography variant="body1" fontWeight="500">
+                                  {topic.name}
+                                </Typography>
+                                <Chip
+                                  label={topic.type}
+                                  size="small"
+                                  color={getTopicColor(topic.type) as any}
+                                />
+                              </Box>
+                            }
+                            secondary={
+                              topic.description ? (
+                                <HtmlRenderer
+                                  content={topic.description}
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontSize: "0.875rem",
+                                    lineHeight: 1.43,
+                                    "& p": {
+                                      margin: "4px 0",
+                                      "&:first-of-type": { marginTop: 0 },
+                                      "&:last-of-type": { marginBottom: 0 },
+                                    },
+                                  }}
+                                />
+                              ) : null
+                            }
+                          />
+                        </ListItem>
+                        {topicIndex < chapter.topics.length - 1 && (
+                          <Divider sx={{ ml: 7 }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  }
+                )}
+              </List>
+
+              {/* Sessions Section */}
+              {chapter.sessions && chapter.sessions.length > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography
+                    variant="h6"
+                    sx={{ mb: 2, px: 2, fontWeight: 600 }}
+                  >
+                    Live Sessions
+                  </Typography>
+                  <List>
+                    {chapter.sessions.map((session: CourseSession) => (
                       <ListItem
+                        key={session.id}
                         sx={{
-                          cursor: "pointer",
-                          "&:hover": {
-                            backgroundColor: "action.hover",
-                          },
                           borderRadius: 1,
                           mb: 1,
-                        }}
-                        onClick={() => {
-                          // Handle topic click - navigate to topic page with chapter context
-                          router.push(`/courses/${id}/topics/${topic.id}?chapterId=${chapter.id}&type=${topic.type}`);
+                          backgroundColor: "action.hover",
                         }}
                       >
-                        <ListItemIcon>{getTopicIcon(topic.type)}</ListItemIcon>
+                        <ListItemIcon>
+                          <VideoCall color="info" />
+                        </ListItemIcon>
                         <ListItemText
                           primary={
                             <Box
@@ -255,44 +365,92 @@ const CourseCurriculumPage = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
+                                flexWrap: "wrap",
                               }}
                             >
                               <Typography variant="body1" fontWeight="500">
-                                {topic.name}
+                                {session.name}
                               </Typography>
-                              <Chip
-                                label={topic.type}
-                                size="small"
-                                color={getTopicColor(topic.type) as any}
-                              />
+                              {session.zoom_link && (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="primary"
+                                  startIcon={<VideoCall />}
+                                  onClick={() =>
+                                    session.zoom_link &&
+                                    window.open(session.zoom_link, "_blank")
+                                  }
+                                  sx={{ ml: "auto" }}
+                                >
+                                  Join Session
+                                </Button>
+                              )}
                             </Box>
                           }
                           secondary={
-                            topic.description ? (
-                              <HtmlRenderer
-                                content={topic.description}
+                            <Box sx={{ mt: 1 }}>
+                              {session.description && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ mb: 1 }}
+                                >
+                                  {session.description}
+                                </Typography>
+                              )}
+                              <Box
                                 sx={{
-                                  color: "text.secondary",
-                                  fontSize: "0.875rem",
-                                  lineHeight: 1.43,
-                                  "& p": {
-                                    margin: "4px 0",
-                                    "&:first-of-type": { marginTop: 0 },
-                                    "&:last-of-type": { marginBottom: 0 },
-                                  },
+                                  display: "flex",
+                                  gap: 2,
+                                  alignItems: "center",
                                 }}
-                              />
-                            ) : null
+                              >
+                                {session.date && (
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 0.5,
+                                    }}
+                                  >
+                                    <CalendarToday sx={{ fontSize: 16 }} />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      {new Date(
+                                        session.date
+                                      ).toLocaleDateString()}
+                                    </Typography>
+                                  </Box>
+                                )}
+                                {session.start_time && session.end_time && (
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 0.5,
+                                    }}
+                                  >
+                                    <AccessTime sx={{ fontSize: 16 }} />
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      {session.start_time} - {session.end_time}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
                           }
                         />
                       </ListItem>
-                      {topicIndex < chapter.topics.length - 1 && (
-                        <Divider sx={{ ml: 7 }} />
-                      )}
-                    </React.Fragment>
-                  )
-                )}
-              </List>
+                    ))}
+                  </List>
+                </>
+              )}
             </AccordionDetails>
           </Accordion>
         ))}

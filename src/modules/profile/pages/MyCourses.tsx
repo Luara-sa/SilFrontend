@@ -38,6 +38,7 @@ const mapStudentCourseToCardProps = (course: StudentCourse) => {
     currency: course.course_price?.currency || "SAR",
     lessonCount: 0, // This would need to be added to the API response or calculated
     navigateTo: `/courses/${course.id}/student-details`,
+    isEnrolled: true, // This is MyCourses, so user is enrolled
   };
 };
 

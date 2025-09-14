@@ -10,4 +10,5 @@ export * from "./input/index";
 export * from "./loader/BackdropLoader";
 export * from "./no-data/index";
 export * from "./payment-modal/index";
+export * from "./quiz/TopicQuizComponent";
 export { default as HtmlRenderer } from "./html-renderer/HtmlRenderer";

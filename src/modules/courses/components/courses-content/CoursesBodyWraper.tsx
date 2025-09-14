@@ -18,6 +18,7 @@ interface Props {}
 export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
   (props: Props, paramsRef: any) => {
     const {
+      studentCourses,
       legacyCourses,
       loading: studentCoursesLoading,
       error: studentCoursesError,
@@ -33,12 +34,8 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
 
     // Load courses on mount and when filters/page change
     useEffect(() => {
-      const isLoggedIn = _AuthService.isLoggedIn();
-      const token = _AuthService.getJwtToken();
-
-      if (isLoggedIn && token) {
-        fetchStudentCourses(currentPage, 15, filters);
-      }
+      // Always fetch courses, whether authenticated or not
+      fetchStudentCourses(currentPage, 15, filters);
     }, [fetchStudentCourses, filters, currentPage]);
 
     const handlePageChange = (
@@ -49,10 +46,6 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
     };
 
     const handleRefreshCourses = () => {
-      const isLoggedIn = _AuthService.isLoggedIn();
-      if (!isLoggedIn) {
-        return;
-      }
       fetchStudentCourses(currentPage, 15, filters);
     };
 
@@ -87,7 +80,7 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
         </Box>
 
         {/* Courses Grid */}
-        {legacyCourses && legacyCourses.length > 0 ? (
+        {studentCourses && studentCourses.length > 0 ? (
           <>
             <Box
               sx={{
@@ -100,19 +93,36 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
                 minHeight: "400px",
               }}
             >
-              {legacyCourses.map((course: any) => (
+              {studentCourses.map((course: any) => (
                 <CourseCard
                   id={course.id}
                   key={course.id}
-                  name={course.name?.en || course.name}
-                  hours={course.hours}
-                  image={course.image}
-                  level={course.level}
-                  price={course.price}
-                  rate={course.rate}
-                  type={course.type}
-                  lessonCount={course.sessions?.length || 0}
-                  discount={course.discount}
+                  name={course.name}
+                  hours={course.duration}
+                  image={course.thumbnail}
+                  level={course.levels?.[0]?.name || ""}
+                  price={parseFloat(course.course_price?.price || "0")}
+                  rate={course.reviews?.average_rating || 0}
+                  type={course.mode}
+                  lessonCount={0}
+                  discount={
+                    course.course_price?.discounted_price
+                      ? Math.round(
+                          (1 -
+                            parseFloat(course.course_price.discounted_price) /
+                              parseFloat(course.course_price.price)) *
+                            100
+                        )
+                      : 0
+                  }
+                  originalPrice={parseFloat(course.course_price?.price || "0")}
+                  discountedPrice={
+                    course.course_price?.discounted_price
+                      ? parseFloat(course.course_price.discounted_price)
+                      : undefined
+                  }
+                  currency={course.course_price?.currency || "SAR"}
+                  categoryName={course.category?.name}
                   navigateTo={`courses/${course.id}/student-details`}
                 />
               ))}

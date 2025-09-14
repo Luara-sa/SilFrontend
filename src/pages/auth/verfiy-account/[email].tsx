@@ -81,14 +81,14 @@ const VerfiyAccount = () => {
         localStorage.removeItem("verify_email_token");
         localStorage.removeItem("verification_email");
 
-        eventEmitter.emit("enqueueSnackbar", {
-          message: "Email verified successfully!",
-          snack: {
-            variant: "success",
-            autoHideDuration: 3000,
-            preventDuplicate: true,
-          },
-        });
+        // eventEmitter.emit("enqueueSnackbar", {
+        //   message: "Email verified successfully!",
+        //   snack: {
+        //     variant: "success",
+        //     autoHideDuration: 3000,
+        //     preventDuplicate: true,
+        //   },
+        // });
 
         // Check if user is already authenticated (has valid token)
         if (_AuthService.isLoggedIn()) {
