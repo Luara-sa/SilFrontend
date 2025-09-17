@@ -19,6 +19,7 @@ import { ProfileMenuAction } from "../ProfileMenu/ProfileMenuAction";
 import { CategoriesMenu } from "../CategoriesMenu/CategoriesMenu";
 import { PlacementTestButton } from "../placement-test/PlacementTestButton";
 import { LanguageMenuAction } from "../Language-menu/LanguageMenuAction";
+import { useUserAccess } from "hooks/useUserAccess";
 
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CloseIcon from "@mui/icons-material/Close";
@@ -27,6 +28,7 @@ export const HeaderMobile = () => {
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const { isLogged } = useMe();
   const { t } = useTranslation("header");
+  const { canAccess } = useUserAccess();
   const handleClick = () => {
     setDrawerOpen((prev) => !prev);
   };
@@ -100,8 +102,12 @@ export const HeaderMobile = () => {
                 </Button>
               </Link>
             )}
-            <Divider sx={{ borderColor: "#E0E0E0" }} />
-            <CategoriesMenu />
+            {canAccess.categories && (
+              <>
+                <Divider sx={{ borderColor: "#E0E0E0" }} />
+                <CategoriesMenu />
+              </>
+            )}
             <Divider sx={{ borderColor: "#E0E0E0" }} />
             <Link href="/courses">
               <Typography
@@ -129,8 +135,12 @@ export const HeaderMobile = () => {
                 {t("contact us")}
               </Typography>
             </Link>
-            <Divider sx={{ borderColor: "#E0E0E0" }} />
-            <PlacementTestButton />
+            {canAccess.placementTests && (
+              <>
+                <Divider sx={{ borderColor: "#E0E0E0" }} />
+                <PlacementTestButton />
+              </>
+            )}
             <Divider sx={{ borderColor: "#E0E0E0" }} />
             <Typography
               sx={{ fontSize: "16px", fontWeight: "700", color: "#555555" }}

@@ -1,61 +1,52 @@
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import { useAuth } from "contexts/AuthContext";
 import Link from "next/link";
-import React, { useEffect, useLayoutEffect, useState } from "react";
-
 import useTranslation from "next-translate/useTranslation";
-
 import {
   Box,
+  Typography,
   Button,
+  Tabs,
+  Tab,
+  FormControl,
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
   Checkbox,
   FormControlLabel,
-  Typography,
-  useTheme,
 } from "@mui/material";
-import { OutlinedInputProps } from "@mui/material";
-import FormControl from "@mui/material/FormControl";
-import InputAdornment from "@mui/material/InputAdornment";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import IconButton from "@mui/material/IconButton";
-
+import { LoginLayout } from "components/layout/login-layout/LoginLayout";
+import { Seo } from "components/shared";
+import { TextFieldStyled } from "components/styled/TextFiled";
+import ButtonLoader from "components/custom/ButtonLoader";
+import { _AuthService } from "services/auth.service";
+import { eventEmitter } from "services/eventEmitter";
 import { meStore } from "store/meStore";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/router";
-
-import { _AuthService } from "services/auth.service";
-import { eventEmitter } from "services/eventEmitter";
-
-import { Seo } from "components/shared";
-import { TextFieldStyled } from "components/styled/TextFiled";
-import PasswordInput from "components/custom/PasswordInput";
-import ButtonLoader from "components/custom/ButtonLoader";
-import { LoginLayout } from "components/layout/login-layout/LoginLayout";
-
-import googleIcon from "/assets/icons/google-icon.svg";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
-import useDeviceSize from "hooks/useDeviceSize";
 import { useGoogleLogin } from "@react-oauth/google";
-
-import { useAuth } from "contexts/AuthContext";
 import { useGuestOnly } from "hooks/useProtectedRoute";
 
-const Login = () => {
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+const LoginPage: React.FC = () => {
   const { t } = useTranslation("auth");
-
   const router = useRouter();
-  const theme = useTheme();
-
-  const setMe = meStore((state) => state.setMe);
-  const Device = useDeviceSize();
-
+  const { isAuthenticated, user, login } = useAuth();
+  const [activeTab, setActiveTab] = useState(0); // 0 = Student, 1 = Company
   const [loading, setLoading] = useState(false);
-  // Error state for the back error message
   const [error, setError] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
+  // Use guest-only hook to redirect authenticated users
+  useGuestOnly();
 
   const validationSchema = Yup.object().shape({
     email: Yup.string().email().required(),
@@ -63,48 +54,192 @@ const Login = () => {
   });
 
   const formOptions = { resolver: yupResolver(validationSchema) };
-  const { register, handleSubmit, formState } = useForm(formOptions);
+  const { register, handleSubmit, formState, reset } =
+    useForm<LoginFormData>(formOptions);
   const { errors } = formState;
 
-  // I did that beacause we need to reset the (error) state when the user start typing
   const { onChange: onEmailChange, ...emailRegister } = register("email");
   const { onChange: onPasswordChange, ...passwordRegister } =
     register("password");
 
-  const DeviceSize = useDeviceSize();
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Redirect based on user type
+      if (user.user_type === "student") {
+        router.push("/courses");
+      } else if (user.user_type === "company") {
+        router.push("/company");
+      }
+    }
+  }, [isAuthenticated, user, router]);
 
-  function LoginHandler(input: any) {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    setError("");
+    reset();
+  };
+
+  const handleLogin = async (data: LoginFormData) => {
     setLoading(true);
     setError("");
-    console.log("Starting login process...");
 
-    _AuthService
-      .login(input)
-      .then((res) => {
-        console.log("Login response received:", res.data);
+    try {
+      const loginMethod =
+        activeTab === 0 ? _AuthService.login : _AuthService.loginCompany;
+      const userType = activeTab === 0 ? "student" : "company";
 
-        // Handle new response structure: { status: true, message: "...", data: { profile: {...}, token: "..." } }
-        const responseData = res.data as any;
+      console.log(`Starting ${userType} login process...`);
 
-        if (!responseData.status) {
-          throw new Error(responseData.message || "Login failed");
+      const response = await loginMethod.call(_AuthService, data);
+      console.log(`${userType} login response:`, response.data);
+
+      const responseData = response.data as any;
+
+      if (!responseData.status) {
+        throw new Error(responseData.message || "Login failed");
+      }
+
+      const { profile, token, verify_email_token } = responseData.data;
+
+      if (!token) {
+        throw new Error("No token received from server");
+      }
+
+      // For student login, check email verification
+      if (
+        activeTab === 0 &&
+        (profile.is_verify === 0 || profile.is_verify === false)
+      ) {
+        console.log(
+          "User email not verified, redirecting to verification page"
+        );
+
+        const userData = {
+          user: profile,
+          token: token,
+          role: [userType],
+          info_system: {
+            english_level_enum: [],
+            document_type_enum: {},
+            vat_value: { vat: 0 },
+          },
+        };
+
+        login(userData.token, userData);
+
+        if (verify_email_token) {
+          localStorage.setItem("verify_email_token", verify_email_token);
         }
+        localStorage.setItem("verification_email", profile.email);
 
-        const { profile, token, verify_email_token } = responseData.data;
+        router.push(
+          `/auth/verfiy-account/${encodeURIComponent(profile.email)}`
+        );
+        return;
+      }
 
-        if (!token) {
-          throw new Error("No token received from server");
-        }
+      const userData = {
+        user: profile,
+        token: token,
+        role: [userType],
+        info_system: {
+          english_level_enum: [],
+          document_type_enum: {},
+          vat_value: { vat: 0 },
+        },
+      };
 
-        console.log("Token received:", token);
-        console.log("Profile received:", profile);
-        console.log("Verify email token:", verify_email_token);
+      console.log(
+        `Calling auth context login with ${userType} userData:`,
+        userData
+      );
 
-        // Check if user email is verified
-        if (profile.is_verify === 0 || profile.is_verify === false) {
-          console.log("User email not verified, redirecting to verification page");
-          
-          // Store user data and token even for unverified users (they'll need it after verification)
+      login(userData.token, userData);
+
+      // For student, fetch updated profile
+      if (activeTab === 0) {
+        _AuthService
+          .fetchAndUpdateStudentProfile(meStore)
+          .then((updatedUser) => {
+            if (updatedUser) {
+              console.log("Student profile updated successfully");
+            }
+          })
+          .catch((err) => {
+            console.warn("Failed to update student profile after login:", err);
+          });
+      }
+
+      eventEmitter.emit("enqueueSnackbar", {
+        message: "Login successful!",
+        variant: "success",
+        autoHideDuration: 3000,
+        preventDuplicate: true,
+      });
+
+      // Redirect based on user type
+      const redirectUrl = activeTab === 0 ? "/courses" : "/company";
+      router.push(redirectUrl);
+    } catch (err: any) {
+      console.error(
+        `${activeTab === 0 ? "Student" : "Company"} login error:`,
+        err
+      );
+
+      let errorMessage = "Login failed. Please try again.";
+      if (
+        err?.response?.data?.message === "error_email_or_password" ||
+        err?.response?.data?.message === "Invalid login credentials"
+      ) {
+        errorMessage = t("error email or passowrd");
+      } else if (err?.response?.data?.message === "activate_account") {
+        router.push(`/auth/verfiy-account/${data.email}`);
+        return;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
+
+      eventEmitter.emit("enqueueSnackbar", {
+        message: errorMessage,
+        variant: "error",
+        autoHideDuration: 5000,
+        preventDuplicate: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGoogleAuth = useGoogleLogin({
+    onSuccess: (codeResponse) => {
+      if (activeTab !== 0) {
+        eventEmitter.emit("enqueueSnackbar", {
+          message: "Google login is only available for students",
+          variant: "warning",
+          autoHideDuration: 3000,
+          preventDuplicate: true,
+        });
+        return;
+      }
+
+      _AuthService
+        .socialLogin({
+          access_token: codeResponse.access_token,
+          provider: "google",
+        })
+        .then((res) => {
+          const responseData = res.data as any;
+
+          if (!responseData.status) {
+            throw new Error(responseData.message || "Social login failed");
+          }
+
+          const { profile, token } = responseData.data;
+
           const userData = {
             user: profile,
             token: token,
@@ -115,217 +250,41 @@ const Login = () => {
               vat_value: { vat: 0 },
             },
           };
-          
-          // Store user data and token for after verification
+
           login(userData.token, userData);
-          
-          // Store verify_email_token for verification process
-          if (verify_email_token) {
-            localStorage.setItem("verify_email_token", verify_email_token);
-          }
-          
-          // Store user email for verification page
-          localStorage.setItem("verification_email", profile.email);
-          
-          // Redirect to verification page
-          router.push(`/auth/verfiy-account/${encodeURIComponent(profile.email)}`);
-          return;
-        }
 
-        const userData = {
-          user: profile,
-          token: token,
-          role: ["student"], // Default role for now
-          info_system: {
-            // Mock info_system structure to prevent loading state
-            english_level_enum: [],
-            document_type_enum: {},
-            vat_value: { vat: 0 },
-          },
-        };
-
-        console.log("Calling auth context login with userData:", userData);
-
-        // Use the auth context login method instead of direct store manipulation
-        try {
-          login(userData.token, userData);
-          console.log("Auth context login completed successfully");
-        } catch (loginError) {
-          console.error("Auth context login failed:", loginError);
-          throw loginError;
-        }
-
-        // Verify token storage
-        console.log(
-          "Login successful - Token stored:",
-          !!localStorage.getItem("token")
-        );
-        console.log("User data stored:", !!localStorage.getItem("user_data"));
-        console.log("Auth service token check:", !!_AuthService.getJwtToken());
-
-        // Fetch updated student profile data after successful login
-        if (userData.role?.includes("student")) {
           _AuthService
             .fetchAndUpdateStudentProfile(meStore)
             .then((updatedUser) => {
               if (updatedUser) {
-                console.log("Student profile updated successfully");
+                console.log("Student profile updated after social login");
               }
             })
             .catch((err) => {
               console.warn(
-                "Failed to update student profile after login:",
+                "Failed to update student profile after social login:",
                 err
               );
             });
-        }
 
-        eventEmitter.emit("enqueueSnackbar", {
-          message: "Login successfully.",
-          variant: "success",
-          autoHideDuration: 3000,
-          preventDuplicate: true,
+          router.push("/courses");
+        })
+        .catch((err) => {
+          console.error("Social login error:", err);
+          eventEmitter.emit("enqueueSnackbar", {
+            message: "Social login failed. Please try again.",
+            variant: "error",
+            autoHideDuration: 3000,
+            preventDuplicate: true,
+          });
         });
-
-        // Primary approach: Let useGuestOnly hook handle the redirect
-        console.log(
-          "Login successful - useGuestOnly hook should handle redirect"
-        );
-
-        // Fallback: If useGuestOnly doesn't redirect within 500ms, do manual redirect
-        const redirectTimeout = setTimeout(() => {
-          console.log(
-            "Fallback redirect triggered - useGuestOnly hook didn't redirect in time"
-          );
-          const returnUrl = router.query.returnUrl as string;
-          const redirectTarget =
-            returnUrl && returnUrl !== "/" && returnUrl !== "/auth/login"
-              ? returnUrl
-              : "/";
-          console.log("Fallback redirecting to:", redirectTarget);
-          router.push(redirectTarget);
-        }, 500);
-
-        // Clear the timeout if the component unmounts (redirect happened)
-        const cleanup = () => clearTimeout(redirectTimeout);
-        router.events.on("routeChangeStart", cleanup);
-
-        // Also clear it after a reasonable time
-        setTimeout(() => {
-          router.events.off("routeChangeStart", cleanup);
-          clearTimeout(redirectTimeout);
-        }, 1000);
-      })
-      .catch((err) => {
-        console.error("Login error:", err);
-
-        if (err) {
-          if (
-            err?.response?.data?.message === "error_email_or_password" ||
-            err?.response?.data?.message === "Invalid login credentials"
-          ) {
-            setError(t("error email or passowrd"));
-          } else if (err?.response?.data?.message === "activate_account") {
-            router.push(`/auth/verfiy-account/${input?.email}`);
-          } else {
-            const errorMessage =
-              err?.response?.data?.message || err.message || "Login failed";
-            setError(errorMessage);
-          }
-        }
-      })
-      .finally(() => setLoading(false));
-  }
-
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleMouseDownPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-  };
-
-  // Use guest-only hook to redirect authenticated users
-  const { isLoading: guestCheckLoading } = useGuestOnly();
-  const { login } = useAuth();
-
-  useLayoutEffect(() => {
-    // This check is now handled by useGuestOnly hook
-    // _AuthService.isLoggedIn() && router.push("/");
-  }, []);
-
-  const onGoogleAuth = useGoogleLogin({
-    onSuccess: (codeResponse) => {
-      _AuthService
-        .socialLogin({
-          access_token: codeResponse.access_token,
-          provider_name: "google",
-        })
-        .then((res) => {
-          // Handle social login response - assuming it follows the new structure
-          const userData = {
-            user: (res.data as any).profile || (res.data as any).result?.user,
-            token:
-              (res.data as any).token || (res.data as any).result?.access_token,
-            role: ["student"], // Default role for now
-            info_system: {
-              // Mock info_system structure to prevent loading state
-              english_level_enum: [],
-              document_type_enum: {},
-              vat_value: { vat: 0 },
-            },
-          };
-
-          // Use the auth context login method
-          login(userData.token, userData);
-
-          // Save user data to localStorage for persistence (backup)
-          localStorage.setItem("user_data", JSON.stringify(userData));
-
-          // Verify token storage
-          console.log(
-            "Social login successful - Token stored:",
-            !!localStorage.getItem("token")
-          );
-          console.log("User data stored:", !!localStorage.getItem("user_data"));
-
-          // Fetch updated student profile data after successful social login
-          if (userData.role?.includes("student")) {
-            _AuthService
-              .fetchAndUpdateStudentProfile(meStore)
-              .then((updatedUser) => {
-                if (updatedUser) {
-                  // Profile updated successfully
-                }
-              })
-              .catch((err) => {
-                console.warn(
-                  "Failed to update student profile after social login:",
-                  err
-                );
-              });
-          }
-
-          // Handle redirect after login
-          const returnUrl = router.query.returnUrl as string;
-          if (returnUrl && returnUrl !== "/") {
-            router.push(returnUrl);
-          } else {
-            router.push("/");
-          }
-        })
-        .catch((err) => console.error("Social login error:", err));
     },
     onError: (error) => {
       eventEmitter.emit("enqueueSnackbar", {
-        message: "Something went wrong, please check you internet conection",
+        message: "Something went wrong, please check your internet connection",
         variant: "error",
-        snack: {
-          autoHideDuration: 3000,
-          preventDuplicate: true,
-        },
+        autoHideDuration: 3000,
+        preventDuplicate: true,
       });
     },
   });
@@ -356,252 +315,320 @@ const Login = () => {
           <Box
             sx={{
               borderRadius: "15px",
-              width: { xs: "77%", md: "62vw" },
-              minHeight: "500px",
+              width: { xs: "90%", md: "70vw", lg: "60vw" },
+              minHeight: "600px",
               display: "flex",
               boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
               justifyContent: "center",
               backgroundImage:
                 "linear-gradient(66.04deg, rgba(254, 254, 254, 0.3) 0%, rgba(254, 254, 254, 0.6) 48.75%, rgba(255, 255, 255, 0.8) 100%)",
-              padding: { xs: "0", md: "20px" },
+              padding: { xs: "20px", md: "20px" },
               my: "20px",
             }}
           >
-            {DeviceSize !== "mobile" && (
-              <Box
-                sx={{
-                  backgroundImage:
-                    "linear-gradient(180deg, #0B8191 0%, #1E5B63 100%)",
-                  flex: "0.4",
-                  minWidth: "250px",
-                  px: "2.083vw",
-                  py: "2.083vw",
-                  borderRadius: "10px",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography
-                    variant="h1"
-                    sx={{ color: "gray.active", fontWeight: "700" }}
-                  >
-                    {t("login")}
-                  </Typography>
-                  <Box>
-                    <Typography
-                      variant="h2"
-                      sx={{
-                        color: "gray.active",
-                        fontWeight: "700",
-                        //  mt: "20vh"
-                      }}
-                    >
-                      {t("lorem")}
-                    </Typography>
-
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        color: "gray.active",
-                        mt: "5vh",
-                      }}
-                    >
-                      {t("lorem2")}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                      Go to Home
-                    </Typography>
-                    <Button
-                      onClick={() => router.push("/")}
-                      variant="contained"
-                      endIcon={<ArrowForwardOutlinedIcon />}
-                      sx={{
-                        backgroundColor: "#FEFEFE",
-                        mt: "5px",
-                        fontWeight: 700,
-                        fontSize: "15px",
-                        color: "primary.main",
-                        px: "25px",
-                        "&:hover": {
-                          backgroundColor: "#d8d8d8",
-                        },
-                      }}
-                    >
-                      Get Started
-                    </Button>
-                  </Box>
-                </Box>
-              </Box>
-            )}
-
+            {/* Left Side - Welcome Section */}
             <Box
               sx={{
-                flex: "0.6",
-                px: "5vw",
+                backgroundImage:
+                  "linear-gradient(180deg, #0B8191 0%, #1E5B63 100%)",
+                flex: { xs: "0", md: "0.4" },
+                minWidth: { xs: "0", md: "250px" },
+                px: { xs: "0", md: "2.083vw" },
+                py: { xs: "0", md: "2.083vw" },
+                borderRadius: "10px",
+                display: { xs: "none", md: "flex" },
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography
+                variant="h1"
+                sx={{
+                  color: "gray.active",
+                  fontWeight: "700",
+                  fontSize: "2rem",
+                }}
+              >
+                {t("login")}
+              </Typography>
+              <Box>
+                <Typography
+                  variant="h2"
+                  sx={{
+                    color: "gray.active",
+                    fontWeight: "700",
+                    fontSize: "1.5rem",
+                    mb: "20px",
+                  }}
+                >
+                  {t("lorem")}
+                </Typography>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: "gray.active",
+                    fontSize: "1rem",
+                  }}
+                >
+                  {t("lorem2")}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
+                  Go to Home
+                </Typography>
+                <Button
+                  onClick={() => router.push("/")}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#FEFEFE",
+                    mt: "5px",
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    color: "primary.main",
+                    px: "25px",
+                    "&:hover": {
+                      backgroundColor: "#d8d8d8",
+                    },
+                  }}
+                >
+                  Get Started
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Right Side - Login Form */}
+            <Box
+              sx={{
+                flex: { xs: "1", md: "0.6" },
+                px: { xs: "0", md: "3vw" },
                 py: "20px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                justifyContent: "center",
               }}
             >
+              {/* Logo */}
               <Box
                 sx={{
-                  width: "250px",
+                  width: { xs: "200px", md: "250px" },
                   position: "relative",
                   display: "flex",
                   justifyContent: "center",
+                  mb: "30px",
                 }}
               >
                 <img
                   src="/assets/images/logo.svg"
-                  style={{ width: "25.438vw" }}
+                  alt="SIL Logo"
+                  style={{ width: "100%", maxWidth: "200px" }}
                 />
               </Box>
-              <Box sx={{ width: "100%", mt: "40px" }}>
-                <Box>
-                  <TextFieldStyled
-                    variant="outlined"
-                    fullWidth
-                    placeholder="Email"
-                    {...emailRegister}
-                    onChange={(e) => {
-                      onEmailChange(e);
-                      setError("");
-                    }}
-                    error={Boolean(errors.email?.message || error)}
-                    helperText={(errors.email?.message as any) || error || ""}
-                  />
-                </Box>
-                <Box sx={{ mt: "40px" }}>
-                  <FormControl sx={{}} fullWidth variant="outlined">
-                    <OutlinedInput
-                      id="outlined-adornment-password"
-                      type={showPassword ? "text" : "password"}
-                      {...passwordRegister}
-                      onChange={(e) => {
-                        onPasswordChange(e);
-                        setError("");
-                      }}
-                      error={Boolean(errors.password?.message)}
-                      placeholder="Password"
-                      fullWidth
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      sx={{
-                        backgroundColor: "gray.active",
-                        fontSize: "16px",
-                        "& .MuiInputBase-input ": {
-                          padding: "13px 14px",
-                        },
 
-                        "& input::placeholder": {
-                          color: "gray.main",
-                        },
-                      }}
-                    />
-                  </FormControl>
-                  <Typography
-                    sx={{ color: "#d32f2f", fontSize: "12px", pl: "15px" }}
-                  >
-                    {(errors.password?.message as any) || error || ""}
-                  </Typography>
-                </Box>
-              </Box>
-              <Box
-                sx={{
-                  width: "100%",
-                  mt: "40px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Box>
-                  <FormControlLabel
-                    control={<Checkbox defaultChecked size="small" />}
-                    label={t("remember me")}
-                    sx={{
-                      "& .MuiFormControlLabel-label ": {
-                        color: "primary.main",
-                        fontWeight: "700",
-                        fontSize: "12px",
-                      },
-                    }}
-                  />
-                </Box>
-                <Box
+              {/* Tab Switch */}
+              <Box sx={{ width: "100%", maxWidth: "400px", mb: "30px" }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  variant="fullWidth"
                   sx={{
-                    "& a": {
-                      fontSize: "14px",
+                    mb: 2,
+                    "& .MuiTab-root": {
+                      textTransform: "none",
+                      fontWeight: 600,
+                      fontSize: "16px",
+                      color: "primary.main",
+                    },
+                    "& .MuiTabs-indicator": {
+                      height: 3,
+                      backgroundColor: "primary.main",
+                    },
+                    "& .Mui-selected": {
                       color: "primary.main",
                     },
                   }}
                 >
-                  <Link href={"forget-password"}>{t("forgot password")}</Link>
-                </Box>
+                  <Tab label="Student Login" />
+                  <Tab label="Company Login" />
+                </Tabs>
               </Box>
-              <Box sx={{ width: "70%", mt: "40px" }}>
-                <ButtonLoader
-                  loading={loading}
-                  disableOnLoading
-                  variant="contained"
-                  onClick={() => handleSubmit(LoginHandler)()}
-                  sx={{
-                    borderRadius: "10px",
-                    fontSize: "19px",
-                    fontWeight: "700",
-                    height: "34px",
-                    width: "100%",
-                    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
-                  }}
-                >
-                  {t("login")}
-                </ButtonLoader>
-                <Button
-                  onClick={() => onGoogleAuth()}
-                  fullWidth
-                  variant="light"
-                  startIcon={<img src="/assets/icons/google-icon.svg" />}
-                  sx={{
-                    mt: "24px",
-                    display: "flex",
-                    justifyContent: "center",
-                    backgroundColor: "gray.active",
-                    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
-                    borderRadius: "10px",
-                    fontSize: "0.938vw",
-                    fontWeight: "700",
-                    py: "2px",
-                  }}
-                >
-                  {t("login with google account")}
-                </Button>
+
+              {/* Login Form */}
+              <Box
+                component="form"
+                onSubmit={handleSubmit(handleLogin)}
+                sx={{ width: "100%", maxWidth: "400px" }}
+              >
                 <Box
-                  sx={{
-                    mt: "48px",
-                    textAlign: "center",
-                    "& a": { color: "wood.main", fontSize: "0.833vw" },
-                  }}
+                  sx={{ display: "flex", flexDirection: "column", gap: "20px" }}
                 >
-                  <Link href={"signup"}>{t("create new account")}</Link>
+                  {/* Email Field */}
+                  <Box>
+                    <TextFieldStyled
+                      fullWidth
+                      placeholder="Email"
+                      {...emailRegister}
+                      onChange={(e: any) => {
+                        setError("");
+                        onEmailChange(e);
+                      }}
+                      error={!!errors.email || !!error}
+                      helperText={(errors.email?.message as string) || ""}
+                    />
+                  </Box>
+
+                  {/* Password Field */}
+                  <Box>
+                    <FormControl fullWidth variant="outlined">
+                      <OutlinedInput
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        {...passwordRegister}
+                        onChange={(e: any) => {
+                          setError("");
+                          onPasswordChange(e);
+                        }}
+                        error={!!errors.password || !!error}
+                        endAdornment={
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="toggle password visibility"
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                            >
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        }
+                        sx={{
+                          backgroundColor: "gray.active",
+                          fontSize: "16px",
+                          "& .MuiInputBase-input": {
+                            padding: "13px 14px",
+                          },
+                          "& input::placeholder": {
+                            color: "gray.main",
+                          },
+                        }}
+                      />
+                      {(errors.password || error) && (
+                        <Typography
+                          sx={{
+                            color: "error.main",
+                            fontSize: "12px",
+                            mt: "4px",
+                            ml: "14px",
+                          }}
+                        >
+                          {(errors.password?.message as string) || error}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  </Box>
+
+                  {/* Remember Me & Forgot Password */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <FormControlLabel
+                      control={<Checkbox size="small" />}
+                      label={t("remember me")}
+                      sx={{
+                        "& .MuiFormControlLabel-label": {
+                          color: "primary.main",
+                          fontWeight: "700",
+                          fontSize: "12px",
+                        },
+                      }}
+                    />
+                    <Link href="/auth/forget-password">
+                      <Typography
+                        sx={{
+                          fontSize: "14px",
+                          color: "primary.main",
+                          cursor: "pointer",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        {t("forgot password")}
+                      </Typography>
+                    </Link>
+                  </Box>
+
+                  {/* Login Button */}
+                  <ButtonLoader
+                    loading={loading}
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                      height: "48px",
+                      fontSize: "19px",
+                      fontWeight: 700,
+                      borderRadius: "10px",
+                      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
+                    }}
+                  >
+                    {t("login")}
+                  </ButtonLoader>
+
+                  {/* Google Login - Only for Students */}
+                  {activeTab === 0 && (
+                    <Button
+                      onClick={() => onGoogleAuth()}
+                      fullWidth
+                      variant="outlined"
+                      startIcon={
+                        <img src="/assets/icons/google-icon.svg" alt="Google" />
+                      }
+                      sx={{
+                        height: "48px",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        borderRadius: "10px",
+                        textTransform: "none",
+                        backgroundColor: "gray.active",
+                        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
+                        border: "none",
+                        py: "2px",
+                        "&:hover": {
+                          border: "none",
+                          backgroundColor: "rgba(0, 0, 0, 0.04)",
+                        },
+                      }}
+                    >
+                      {t("login with google account")}
+                    </Button>
+                  )}
+
+                  {/* Sign Up Link */}
+                  <Box sx={{ textAlign: "center", mt: "20px" }}>
+                    <Link href="/auth/signup">
+                      <Typography
+                        sx={{
+                          color: "wood.main",
+                          fontSize: "14px",
+                          cursor: "pointer",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        {t("create new account")}
+                      </Typography>
+                    </Link>
+                  </Box>
                 </Box>
               </Box>
             </Box>
@@ -612,6 +639,5 @@ const Login = () => {
   );
 };
 
-export default Login;
-
-Login.layout = LoginLayout;
+export default LoginPage;
+LoginPage.layout = LoginLayout;

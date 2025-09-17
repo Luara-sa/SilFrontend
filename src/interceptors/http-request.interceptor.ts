@@ -11,6 +11,7 @@ export const HttpRequestInterceptor = () => {
       const publicEndpoints = [
         'student/courses',
         'student/categories',
+        'company/courses',
         'getCourses',
         'getCategories'
       ];

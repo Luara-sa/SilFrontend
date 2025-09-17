@@ -38,9 +38,11 @@ export const DeleteAccountPopupStep2 = () => {
     setLoading(true);
     await _WithoutAuthService
       .contactUs({
-        name: me?.username,
-        email: me?.email,
-        description: input.description,
+        name: me?.username || "",
+        email: me?.email || "",
+        phone: "", // Required field
+        subject: "Account Deletion Request", // Required field
+        message: input.description || "", // Use message instead of description
       })
       .then(() => {
         _AuthService

@@ -1,25 +1,34 @@
-import { _WithAuthService } from "services/withAuth.service";
+import { _CourseService } from "services/course.service";
 
 interface IParams {
   moyasar_payment_id: number | string;
   course_id: number;
   selectedMethod: number;
+  course_group_id?: number;
+  bank_document?: File;
 }
 
 export const handlePaymentPaid = ({
   moyasar_payment_id,
   course_id,
   selectedMethod,
+  course_group_id,
+  bank_document,
 }: IParams) => {
-  const tempData = {
-    live_course_id: course_id,
-    payment_id: selectedMethod,
-    amount: 250,
-    totalWithVat: 287,
-    discount: 10,
-    paid_type: 1,
-    moyasar_payment_id: moyasar_payment_id,
+  // Map payment method IDs to the new API format
+  const paymentMethodMap: { [key: number]: 'paymob' | 'tamara' | 'tabby' | 'bank_transfer' } = {
+    1: 'paymob',
+    2: 'tamara', 
+    3: 'tabby',
+    4: 'bank_transfer',
   };
 
-  return _WithAuthService.createOrderStudent(tempData);
+  const checkoutData = {
+    payment_method: paymentMethodMap[selectedMethod] || 'paymob',
+    course_id: course_id,
+    course_group_id: course_group_id,
+    bank_document: bank_document,
+  };
+
+  return _CourseService.checkoutCourse(checkoutData);
 };

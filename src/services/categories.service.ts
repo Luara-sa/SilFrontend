@@ -1,5 +1,6 @@
 import { _axios } from "interceptors/http-config";
 import { Category, IndexObj, RootObj, StudentCategoriesResponse } from "interface/common";
+import { ApiUtils } from "utils/apiUtils";
 
 class CategoriesService {
   private static _instance: CategoriesService;
@@ -9,13 +10,26 @@ class CategoriesService {
     return this._instance || (this._instance = new this());
   }
 
+  /**
+   * Throw error for company users trying to access student-only features
+   */
+  private throwCompanyAccessError(feature: string): never {
+    throw new Error(`${feature} is only available for student accounts.`);
+  }
+
   getCategories(): Promise<RootObj<Category[]>> {
-    return _axios.get<any>(`student/categories`).then((res) => res.data);
+    if (!ApiUtils.isStudentUser()) {
+      this.throwCompanyAccessError('Categories');
+    }
+    return _axios.get<any>(`${ApiUtils.buildEndpoint('categories')}`).then((res) => res.data);
   }
 
   // New method for student categories API with pagination support
   getStudentCategories(page: number = 1, per_page: number = 15): Promise<StudentCategoriesResponse> {
-    return _axios.get<StudentCategoriesResponse>(`student/categories`, {
+    if (!ApiUtils.isStudentUser()) {
+      this.throwCompanyAccessError('Categories');
+    }
+    return _axios.get<StudentCategoriesResponse>(`${ApiUtils.buildEndpoint('categories')}`, {
       params: { page, per_page }
     }).then((res) => res.data);
   }

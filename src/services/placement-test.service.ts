@@ -1,5 +1,6 @@
 import { _axios } from "interceptors/http-config";
 import { AxiosResponse } from "axios";
+import { ApiUtils } from "utils/apiUtils";
 
 export interface PlacementTest {
   id: number;
@@ -102,16 +103,36 @@ class PlacementTestService {
     return this._instance || (this._instance = new this());
   }
 
+  /**
+   * Throw error for company users trying to access student-only features
+   */
+  private throwCompanyAccessError(feature: string): never {
+    throw new Error(`${feature} is only available for student accounts.`);
+  }
+
+  /**
+   * Check if current user can access placement tests
+   */
+  private canAccessPlacementTests(): boolean {
+    return ApiUtils.isStudentUser();
+  }
+
   getPlacementTests(page: number = 1): Promise<AxiosResponse<PlacementTestResponse>> {
-    return _axios.get<PlacementTestResponse>(`student/placement-tests?page=${page}`);
+    if (!this.canAccessPlacementTests()) {
+      this.throwCompanyAccessError('Placement Tests');
+    }
+    return _axios.get<PlacementTestResponse>(`${ApiUtils.buildEndpoint('placement-tests')}?page=${page}`);
   }
 
   startPlacementTest(id: number): Promise<AxiosResponse<BasicResponse>> {
-    return _axios.post<BasicResponse>(`student/placement-tests/${id}/start`);
+    if (!this.canAccessPlacementTests()) {
+      this.throwCompanyAccessError('Placement Tests');
+    }
+    return _axios.post<BasicResponse>(`${ApiUtils.buildEndpoint(`placement-tests/${id}/start`)}`);
   }
 
   getPlacementTestQuestions(id: number): Promise<AxiosResponse<PlacementTestDetailResponse>> {
-    return _axios.get<PlacementTestDetailResponse>(`student/placement-tests/${id}`);
+    return _axios.get<PlacementTestDetailResponse>(`${ApiUtils.buildEndpoint(`placement-tests/${id}`)}`);
   }
 
   submitQuizAnswer(answer: QuestionAnswer): Promise<AxiosResponse<BasicResponse>> {
@@ -126,7 +147,7 @@ class PlacementTestService {
       formData.append('answers[]', answerId);
     });
 
-    return _axios.post<BasicResponse>(`student/submit-quiz-answer`, formData);
+    return _axios.post<BasicResponse>(`${ApiUtils.buildEndpoint('submit-quiz-answer')}`, formData);
   }
 
   submitFinalQuiz(submission: FinalQuizSubmission): Promise<AxiosResponse<BasicResponse>> {
@@ -134,11 +155,11 @@ class PlacementTestService {
     formData.append('placement_test_id', submission.placement_test_id);
     formData.append('quiz_id', submission.quiz_id);
 
-    return _axios.post<BasicResponse>(`student/submit-quiz`, formData);
+    return _axios.post<BasicResponse>(`${ApiUtils.buildEndpoint('submit-quiz')}`, formData);
   }
 
   getPlacementTestResult(id: number): Promise<AxiosResponse<any>> {
-    return _axios.get(`student/placement-tests/${id}/result`);
+    return _axios.get(`${ApiUtils.buildEndpoint(`placement-tests/${id}/result`)}`);
   }
 }
 

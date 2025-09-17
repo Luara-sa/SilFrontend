@@ -37,3 +37,42 @@ app.prepare().then(() => {
     console.log(`> Ready on http://${hostname}:${port}`)
   })
 })
+
+
+// // server.js
+// const http = require('http');
+// const { parse } = require('url');
+// const next = require('next');
+
+// const dev = process.env.NODE_ENV !== 'production';
+// const port = Number(process.env.PORT) || 3003; // cast to number
+// const host = process.env.HOST || 'localhost';
+
+// const app = next({ dev }); // don't pass hostname/port here on Next 12
+// const handle = app.getRequestHandler();
+
+// app.prepare()
+//   .then(() => {
+//     const server = http.createServer(async (req, res) => {
+//       try {
+//         const parsedUrl = parse(req.url, true);
+//         const { pathname, query } = parsedUrl;
+
+//         if (pathname === '/a') return app.render(req, res, '/a', query);
+//         if (pathname === '/b') return app.render(req, res, '/b', query);
+//         return handle(req, res, parsedUrl);
+//       } catch (err) {
+//         console.error('Error occurred handling', req.url, err);
+//         res.statusCode = 500;
+//         res.end('internal server error');
+//       }
+//     });
+
+//     server.listen(port, host, () => {
+//       console.log(`> Ready on http://${host}:${port}`);
+//     });
+//   })
+//   .catch((err) => {
+//     console.error('Failed to start server:', err);
+//     process.exit(1);
+//   });

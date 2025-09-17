@@ -10,6 +10,7 @@ import {
   RootObj,
   TestType,
 } from "interface/common";
+import { ApiUtils } from "utils/apiUtils";
 import { MyOrders } from "modules/profile/interfaces/profile-interfaces";
 
 class WithAuthService {
@@ -53,7 +54,7 @@ class WithAuthService {
   }
 
   getPlacementTests(): Promise<RootObj<IndexObj2<{ data: TestType[] }>>> {
-    return _axios.get<any>("student/placement-tests").then((res) => res.data);
+    return _axios.get<any>(`${ApiUtils.buildEndpoint('placement-tests')}`).then((res) => res.data);
   }
   getUserTest(id: string): Promise<RootObj<IndexObj2<{ data: any }>>> {
     return _axios.get<any>(`getUserTest/${id}`).then((res) => res.data);
@@ -66,9 +67,9 @@ class WithAuthService {
   getNotificationsByToken(data?: {
     is_read?: 1 | 2;
   }): Promise<RootObj<IndexObj2<Notification[]>>> {
-    // Use the new student/notifications endpoint
+    // Use the dynamic notifications endpoint
     return _axios
-      .get<any>(`student/notifications`)
+      .get<any>(`${ApiUtils.buildEndpoint('notifications')}`)
       .then((res: any) => {
         // Transform new API response to match old structure
         const notifications = res.data.data.content;
@@ -98,7 +99,7 @@ class WithAuthService {
   }
 
   getListOfNotifications(): Promise<RootObj<IndexObj2<Notification[]>>> {
-    return _axios.get<any>("student/notifications").then((res) => res.data);
+    return _axios.get<any>(`${ApiUtils.buildEndpoint('notifications')}`).then((res) => res.data);
   }
 
   readNotification(data: {
@@ -108,7 +109,7 @@ class WithAuthService {
     if (data.make_all_read === 1) {
       // Use new read-all endpoint
       return _axios
-        .get<any>(`student/notifications/read-all`)
+        .get<any>(`${ApiUtils.buildEndpoint('notifications/read-all')}`)
         .then((res: any) => ({
           success: res.data.status,
           message: res.data.message,
@@ -123,7 +124,7 @@ class WithAuthService {
     } else if (data.notification_id) {
       // Use new read specific notification endpoint
       return _axios
-        .get<any>(`student/notifications/read/${data.notification_id}`)
+        .get<any>(`${ApiUtils.buildEndpoint(`notifications/read/${data.notification_id}`)}`)
         .then((res: any) => ({
           success: res.data.status,
           message: res.data.message,
@@ -147,7 +148,7 @@ class WithAuthService {
     if (data?.notification_id) {
       // Use new delete specific notification endpoint
       return _axios
-        .delete<any>(`student/notifications/delete/${data.notification_id}`)
+        .delete<any>(`${ApiUtils.buildEndpoint(`notifications/delete/${data.notification_id}`)}`)
         .then((res: any) => ({
           success: res.data.status,
           message: res.data.message,

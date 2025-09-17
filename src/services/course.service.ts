@@ -2,6 +2,7 @@ import { Result } from "./../interface/test";
 import axios, { AxiosResponse } from "axios";
 import { _axios } from "interceptors/http-config";
 import { Course, IndexObj, Path, IndexObj2, RootObj, StudentCoursesResponse, StudentCourseDetailsResponse, DetailedStudentCourseResponse, CourseEnrollmentRequest, CourseEnrollmentResponse, CourseEnrollmentStatusResponse, CourseCurriculumResponse, StudentCoursesFilters } from "interface/common";
+import { ApiUtils } from "utils/apiUtils";
 
 class CourseService {
   private static _instance: CourseService;
@@ -9,6 +10,20 @@ class CourseService {
 
   public static get Instance() {
     return this._instance || (this._instance = new this());
+  }
+
+  /**
+   * Check if current user can access student-only features
+   */
+  private canAccessStudentFeatures(): boolean {
+    return ApiUtils.isStudentUser();
+  }
+
+  /**
+   * Throw error for company users trying to access student-only features
+   */
+  private throwCompanyAccessError(feature: string): never {
+    throw new Error(`${feature} is only available for student accounts. Company accounts have limited access to course viewing only.`);
   }
 
   getAll(data?: any): Promise<
@@ -27,9 +42,10 @@ class CourseService {
 
 
 
-  // Updated method for student courses API - fetch all courses (no backend filtering)
+  // Updated method for courses API - works for both student and company
   getStudentCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
-    const url = `student/courses?page=${page}&per_page=${perPage}`;
+    // This endpoint is available for both students and companies
+    const url = `${ApiUtils.buildEndpoint('courses')}?page=${page}&per_page=${perPage}`;
     
     return _axios.get<any>(url).then((res) => {
       // The axios response.data should already be the structured response
@@ -61,7 +77,7 @@ class CourseService {
 
   // Public method to fetch courses without authentication
   getPublicStudentCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
-    const url = `student/courses?page=${page}&per_page=${perPage}`;
+    const url = `${ApiUtils.buildEndpoint('courses')}?page=${page}&per_page=${perPage}`;
     
     // Create a request without auth headers
     return _axios.get<any>(url, {
@@ -101,7 +117,7 @@ class CourseService {
 
   // Method to fetch all courses for frontend filtering (legacy)
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
-    return _axios.get<any>('student/courses?per_page=1000').then((res) => {
+    return _axios.get<any>(`${ApiUtils.buildEndpoint('courses')}?per_page=1000`).then((res) => {
       // The axios response.data should already be the structured response
       return res.data;
     }).catch((error) => {
@@ -248,7 +264,7 @@ class CourseService {
       }
     }
     
-    const url = `student/courses?${queryParams.toString()}`;
+    const url = `${ApiUtils.buildEndpoint('courses')}?${queryParams.toString()}`;
     
     return _axios.get<any>(url).then((res) => {
       return res.data;
@@ -279,7 +295,7 @@ class CourseService {
 
   // Method to get student course details
   getStudentCourseDetails(id: string | number): Promise<StudentCourseDetailsResponse> {
-    const url = `student/courses/${id}/details`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${id}/details`)}`;
     
     return _axios.get<StudentCourseDetailsResponse>(url).then((res) => {
       return res.data;
@@ -290,7 +306,7 @@ class CourseService {
 
   // Method to get detailed student course information
   getDetailedStudentCourse(id: string | number): Promise<DetailedStudentCourseResponse> {
-    const url = `student/courses/${id}`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${id}`)}`;
     
     return _axios.get<DetailedStudentCourseResponse>(url).then((res) => {
       return res.data;
@@ -301,7 +317,11 @@ class CourseService {
 
   // Method to enroll in a course
   enrollInCourse(data: CourseEnrollmentRequest): Promise<CourseEnrollmentResponse> {
-    const url = `student/enrolled`;
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('Course Enrollment');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint('enrolled')}`;
     
     return _axios.post<CourseEnrollmentResponse>(url, data).then((res) => {
       return res.data;
@@ -312,7 +332,7 @@ class CourseService {
 
   // Method to check if user is enrolled in a course
   checkCourseEnrollmentStatus(id: string | number): Promise<CourseEnrollmentStatusResponse> {
-    const url = `student/courses/${id}/details`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${id}/details`)}`;
     
     return _axios.get<CourseEnrollmentStatusResponse>(url).then((res) => {
       return res.data;
@@ -323,7 +343,11 @@ class CourseService {
 
   // Method to get course curriculum
   getCourseCurriculum(id: string | number): Promise<CourseCurriculumResponse> {
-    const url = `student/courses/${id}/curriculum`;
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('Course Curriculum');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint(`courses/${id}/curriculum`)}`;
     
     return _axios.get<CourseCurriculumResponse>(url).then((res) => {
       return res.data;
@@ -334,7 +358,7 @@ class CourseService {
 
   // NEW: Method to get video topic content
   getVideoTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
-    const url = `student/courses/${courseId}/curriculum/video/chapters/${chapterId}/topics/${topicId}`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/curriculum/video/chapters/${chapterId}/topics/${topicId}`)}`;
     
     return _axios.get<any>(url).then((res) => {
       return res.data;
@@ -345,7 +369,7 @@ class CourseService {
 
   // NEW: Method to get reading topic content
   getReadingTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
-    const url = `student/courses/${courseId}/curriculum/reading/chapters/${chapterId}/topics/${topicId}`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/curriculum/reading/chapters/${chapterId}/topics/${topicId}`)}`;
     
     return _axios.get<any>(url).then((res) => {
       return res.data;
@@ -356,7 +380,7 @@ class CourseService {
 
   // NEW: Method to get quiz topic content
   getQuizTopicContent(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
-    const url = `student/courses/${courseId}/curriculum/quiz/chapters/${chapterId}/topics/${topicId}`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/curriculum/quiz/chapters/${chapterId}/topics/${topicId}`)}`;
     
     return _axios.get<any>(url).then((res) => {
       return res.data;
@@ -380,7 +404,7 @@ class CourseService {
 
   // Method to mark topic as viewed
   markTopicAsViewed(courseId: string | number, chapterId: string | number, topicId: string | number): Promise<any> {
-    const url = `student/courses/${courseId}/curriculum/chapters/${chapterId}/topics/${topicId}/mark-viewed`;
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/curriculum/chapters/${chapterId}/topics/${topicId}/mark-viewed`)}`;
     
     return _axios.post<any>(url).then((res) => {
       return res.data;
@@ -391,7 +415,11 @@ class CourseService {
 
   // NEW: Methods specifically for My Courses (enrolled courses)
   getMyEnrolledCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
-    const url = `student/my-courses?page=${page}&per_page=${perPage}`;
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('My Enrolled Courses');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint('my-courses')}?page=${page}&per_page=${perPage}`;
     
     return _axios.get<StudentCoursesResponse>(url).then((res) => {
       return res.data;
@@ -402,7 +430,88 @@ class CourseService {
 
   // Method to get all my enrolled courses for pagination
   getAllMyEnrolledCourses(): Promise<StudentCoursesResponse> {
-    return _axios.get<StudentCoursesResponse>('student/my-courses?per_page=1000').then((res) => {
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('My Enrolled Courses');
+    }
+    
+    return _axios.get<StudentCoursesResponse>(`${ApiUtils.buildEndpoint('my-courses')}?per_page=1000`).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Method to show interest in a course
+  interestInCourse(courseId: string | number): Promise<any> {
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('Course Interest');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/interest`)}`;
+    
+    return _axios.post<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Method to delegate a course
+  delegateCourse(courseId: string | number): Promise<any> {
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('Course Delegation');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/delegate`)}`;
+    
+    return _axios.post<any>(url).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Method to review a course
+  reviewCourse(courseId: string | number, data: {
+    stars_count: number;
+    message?: string;
+  }): Promise<any> {
+    if (!this.canAccessStudentFeatures()) {
+      this.throwCompanyAccessError('Course Reviews');
+    }
+    
+    const url = `${ApiUtils.buildEndpoint(`courses/${courseId}/review`)}`;
+    
+    return _axios.post<any>(url, data).then((res) => {
+      return res.data;
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  // NEW: Method to purchase/checkout a course
+  checkoutCourse(data: {
+    payment_method: 'paymob' | 'tamara' | 'tabby' | 'bank_transfer';
+    course_id: string | number;
+    course_group_id?: string | number;
+    bank_document?: File;
+  }): Promise<any> {
+    const url = `${ApiUtils.buildEndpoint('checkout')}`;
+    
+    // Create FormData for file upload support
+    const formData = new FormData();
+    formData.append('payment_method', data.payment_method);
+    formData.append('course_id', data.course_id.toString());
+    
+    if (data.course_group_id) {
+      formData.append('course_group_id', data.course_group_id.toString());
+    }
+    
+    if (data.bank_document) {
+      formData.append('bank_document', data.bank_document);
+    }
+    
+    return _axios.post<any>(url, formData).then((res) => {
       return res.data;
     }).catch((error) => {
       throw error;

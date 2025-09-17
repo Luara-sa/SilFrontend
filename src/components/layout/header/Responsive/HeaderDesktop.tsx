@@ -15,10 +15,12 @@ import { NotificationButton } from "../notification-button/NotificationButton";
 import { ProfileMenuAction } from "../ProfileMenu/ProfileMenuAction";
 import Notification from "components/layout/FireBaseSnack";
 import SearchInput from "components/custom/SearchInput";
+import { useUserAccess } from "hooks/useUserAccess";
 
 export const HeaderDesktop = () => {
   const { isLogged } = useMe();
   const { t } = useTranslation("header");
+  const { canAccess } = useUserAccess();
 
   return (
     <Box
@@ -57,50 +59,47 @@ export const HeaderDesktop = () => {
       </Link>
       <Box
         sx={{
-          // display: { xl: "flex", xs: "none" },
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           width: "100%",
+          gap: 2, // Add consistent spacing
         }}
       >
-        <CategoriesMenu />
-        <Link href="/courses">
-          <Typography
-            sx={{
-              cursor: "pointer",
-              fontSize: ["1.042vw", "1.042vw"],
-              fontWeight: "700",
-              color: "gray.50",
-            }}
-          >
-            {t("courses")}
-          </Typography>
-        </Link>
-        <Link href="/contact-us">
-          <Typography
-            sx={{
-              cursor: "pointer",
-              fontSize: ["1.042vw", "1.042vw"],
-              fontWeight: "700",
-              color: "gray.50",
-            }}
-          >
-            {t("contact us")}
-          </Typography>
-        </Link>
-
-        <Box sx={{ width: "280px" }}>
-          <SearchInput />
-          {/* <Button
-          variant="primary"
-          sx={{ minWidth: "10px" }}
-          onClick={handleClick}
-        >
-          <MoreHorizIcon />
-        </Button> */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3, flex: 1 }}>
+          {canAccess.categories && <CategoriesMenu />}
+          <Link href="/courses">
+            <Typography
+              sx={{
+                cursor: "pointer",
+                fontSize: ["1.042vw", "1.042vw"],
+                fontWeight: "700",
+                color: "gray.50",
+              }}
+            >
+              {t("courses")}
+            </Typography>
+          </Link>
+          <Link href="/contact-us">
+            <Typography
+              sx={{
+                cursor: "pointer",
+                fontSize: ["1.042vw", "1.042vw"],
+                fontWeight: "700",
+                color: "gray.50",
+              }}
+            >
+              {t("contact us")}
+            </Typography>
+          </Link>
         </Box>
-        <PlacementTestButton />
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ width: "280px" }}>
+            <SearchInput />
+          </Box>
+          {canAccess.placementTests && <PlacementTestButton />}
+        </Box>
         <Box
           sx={{
             display: "flex",

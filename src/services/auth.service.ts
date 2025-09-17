@@ -5,6 +5,7 @@ import { AxiosResponse } from "axios";
 import { RootObj } from "interface/common";
 import { IMe } from "store/meStore";
 import { JwtUtils } from "utils/jwtUtils";
+import { ApiUtils } from "utils/apiUtils";
 // import { me, RootObj } from "interfaces/common";
 
 const { NEXT_APP_TOKEN_KEY } = process.env;
@@ -42,6 +43,18 @@ class AuthService {
     });
   }
 
+
+  loginCompany(data: any): Promise<AxiosResponse<RootObj<any>>> {
+    return _axios.post<any>(`company/login`, data).then((res: any) => {
+  
+      // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
+      if (res.data.data && res.data.data.token) {
+        this.doLogin(res.data.data.token);
+      }
+      return res;
+    });
+  }
+
   register(data: any): Promise<AxiosResponse<any, any>> {
     return _axios.post<any>(`student/register`, data).then((res: any) => {
       // Don't auto-login on registration - user needs to verify email first
@@ -50,13 +63,20 @@ class AuthService {
   }
 
   deleteAccount(): Promise<AxiosResponse<any, any>> {
-    return _axios.delete<any>(`student/deleteAccount`).then((res: any) => {
+    return _axios.delete<any>(`${ApiUtils.buildEndpoint('deleteAccount')}`).then((res: any) => {
       return res;
     });
   }
 
   logout(): Promise<AxiosResponse<any, any>> {
-    return _axios.post<any>(`student/logout`).then((res: any) => {
+    return _axios.post<any>(`${ApiUtils.buildEndpoint('logout')}`).then((res: any) => {
+      this.doLogout();
+      return res;
+    });
+  }
+
+  logoutCompany(): Promise<AxiosResponse<any, any>> {
+    return _axios.post<any>(`company/logout`).then((res: any) => {
       this.doLogout();
       return res;
     });
@@ -119,14 +139,14 @@ class AuthService {
   }
 
   socialLogin(data: {
-    provider_name: string;
+    provider: string;
     access_token: string;
   }): Promise<AxiosResponse<RootObj<ISocialLoginRes>>> {
-    return _axios.post<any>(`socialLogin`, data).then((res) => {
-      // Handle both old and new response structures
-      const token = res.data.token || res.data.result?.access_token;
-      if (token) {
-        this.doLogin(token);
+    // Use new student/social-login endpoint with correct parameter names
+    return _axios.post<any>(`student/social-login`, data).then((res) => {
+      // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
+      if (res.data.data && res.data.data.token) {
+        this.doLogin(res.data.data.token);
       }
       return res;
     });
@@ -440,7 +460,7 @@ class AuthService {
 
   // New method to fetch student profile
   getStudentProfile(): Promise<AxiosResponse<RootObj<IStudentProfile>>> {
-    return _axios.get<any>(`student/profile`);
+    return _axios.get<any>(`${ApiUtils.buildEndpoint('profile')}`);
   }
 
   // New method to fetch and update student profile in store
@@ -525,7 +545,7 @@ class AuthService {
       formData.append('profile_img', data.profile_img);
     }
 
-    return _axios.post<any>(`student/update-profile`, formData);
+    return _axios.post<any>(`${ApiUtils.buildEndpoint('update-profile')}`, formData);
   }
 }
 

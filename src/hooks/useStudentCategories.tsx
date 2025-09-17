@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { _CategoriesService } from "services/categories.service";
 import { categoryStore } from "store/categoryStore";
+import { ApiUtils } from "utils/apiUtils";
 
 export const useStudentCategories = () => {
   const storeData = categoryStore((state) => ({
@@ -20,6 +21,12 @@ export const useStudentCategories = () => {
   } = storeData;
 
   const fetchStudentCategories = useCallback(async () => {
+    // Don't fetch categories for company users
+    if (!ApiUtils.isStudentUser()) {
+      console.warn("Categories are not available for company users");
+      return [];
+    }
+
     try {
       setStudentCategoriesLoading(true);
       const response = await _CategoriesService.getAllStudentCategories();

@@ -4,6 +4,7 @@ import { Box, Button, Typography, Alert, Pagination } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
 
 import { useStudentCourses } from "hooks/useStudentCourses";
+import { useMyEnrolledCourses } from "hooks/useMyEnrolledCourses";
 import { _AuthService } from "services/auth.service";
 import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
@@ -27,10 +28,18 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
       resetCourses,
     } = useStudentCourses();
 
+    // Get enrolled courses to determine enrollment status
+    const { courses: enrolledCourses } = useMyEnrolledCourses();
+
     const { filters, currentPage, setCurrentPage } = filterStore();
 
     // Local state
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+    // Create a Set of enrolled course IDs for fast lookup
+    const enrolledCourseIds = new Set(
+      enrolledCourses.map((course) => course.id)
+    );
 
     // Load courses on mount and when filters/page change
     useEffect(() => {
@@ -93,39 +102,49 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
                 minHeight: "400px",
               }}
             >
-              {studentCourses.map((course: any) => (
-                <CourseCard
-                  id={course.id}
-                  key={course.id}
-                  name={course.name}
-                  hours={course.duration}
-                  image={course.thumbnail}
-                  level={course.levels?.[0]?.name || ""}
-                  price={parseFloat(course.course_price?.price || "0")}
-                  rate={course.reviews?.average_rating || 0}
-                  type={course.mode}
-                  lessonCount={0}
-                  discount={
-                    course.course_price?.discounted_price
-                      ? Math.round(
-                          (1 -
-                            parseFloat(course.course_price.discounted_price) /
-                              parseFloat(course.course_price.price)) *
-                            100
-                        )
-                      : 0
-                  }
-                  originalPrice={parseFloat(course.course_price?.price || "0")}
-                  discountedPrice={
-                    course.course_price?.discounted_price
-                      ? parseFloat(course.course_price.discounted_price)
-                      : undefined
-                  }
-                  currency={course.course_price?.currency || "SAR"}
-                  categoryName={course.category?.name}
-                  navigateTo={`courses/${course.id}/student-details`}
-                />
-              ))}
+              {studentCourses.map((course: any) => {
+                const isEnrolled = enrolledCourseIds.has(course.id);
+                return (
+                  <CourseCard
+                    id={course.id}
+                    key={course.id}
+                    name={course.name}
+                    hours={course.duration}
+                    image={course.thumbnail}
+                    level={course.levels?.[0]?.name || ""}
+                    price={parseFloat(course.course_price?.price || "0")}
+                    rate={course.reviews?.average_rating || 0}
+                    type={course.mode}
+                    lessonCount={0}
+                    discount={
+                      course.course_price?.discounted_price
+                        ? Math.round(
+                            (1 -
+                              parseFloat(course.course_price.discounted_price) /
+                                parseFloat(course.course_price.price)) *
+                              100
+                          )
+                        : 0
+                    }
+                    originalPrice={parseFloat(
+                      course.course_price?.price || "0"
+                    )}
+                    discountedPrice={
+                      course.course_price?.discounted_price
+                        ? parseFloat(course.course_price.discounted_price)
+                        : undefined
+                    }
+                    currency={course.course_price?.currency || "SAR"}
+                    categoryName={course.category?.name}
+                    isEnrolled={isEnrolled}
+                    navigateTo={
+                      isEnrolled
+                        ? `courses/${course.id}/curriculum`
+                        : `courses/${course.id}/student-details`
+                    }
+                  />
+                );
+              })}
             </Box>
 
             {/* Pagination */}

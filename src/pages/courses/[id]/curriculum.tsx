@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   Box,
@@ -45,6 +45,21 @@ const CourseCurriculumPage = () => {
 
   const { curriculum, loading, error, isNotPurchased, refetch } =
     useCourseCurriculum(id ? String(id) : null);
+
+  // Refresh curriculum when page becomes visible (e.g., returning from a topic)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refresh curriculum to get updated progress
+        refetch();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refetch]);
 
   if (loading) {
     return (

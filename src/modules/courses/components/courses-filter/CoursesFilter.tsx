@@ -26,6 +26,7 @@ import { ExpandMore, Close, FilterList, Clear } from "@mui/icons-material";
 import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
 import { useStudentCategories } from "hooks/useStudentCategories";
+import { useUserAccess } from "hooks/useUserAccess";
 
 interface CoursesFilterProps {
   open: boolean;
@@ -39,6 +40,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
   onApplyFilters,
 }) => {
   const { filters, setFilters, resetFilters } = filterStore();
+  const { canAccess, isLoading } = useUserAccess();
   const {
     studentCategories = [],
     fetchStudentCategories,
@@ -53,12 +55,23 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
     0, 200,
   ]);
 
-  // Fetch categories when component mounts or drawer opens
+  // Fetch categories when component mounts or drawer opens (only for students)
   useEffect(() => {
-    if (open && studentCategories.length === 0) {
+    if (
+      open &&
+      !isLoading &&
+      canAccess.categories &&
+      studentCategories.length === 0
+    ) {
       fetchStudentCategories();
     }
-  }, [open, studentCategories.length, fetchStudentCategories]);
+  }, [
+    open,
+    studentCategories.length,
+    fetchStudentCategories,
+    canAccess.categories,
+    isLoading,
+  ]);
 
   // Update local state when store filters change
   useEffect(() => {
@@ -190,33 +203,37 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
         </AccordionDetails>
       </Accordion>
 
-      {/* Category */}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            Category
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <FormControl fullWidth size="small">
-            <InputLabel>Select Category</InputLabel>
-            <Select
-              value={localFilters.category_id || ""}
-              onChange={(e) => handleInputChange("category_id", e.target.value)}
-              label="Select Category"
-            >
-              <MenuItem value="">All Categories</MenuItem>
-              {Array.isArray(studentCategories) &&
-                studentCategories.length > 0 &&
-                studentCategories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-        </AccordionDetails>
-      </Accordion>
+      {/* Category - Only show for students */}
+      {canAccess.categories && (
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Category
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <FormControl fullWidth size="small">
+              <InputLabel>Select Category</InputLabel>
+              <Select
+                value={localFilters.category_id || ""}
+                onChange={(e) =>
+                  handleInputChange("category_id", e.target.value)
+                }
+                label="Select Category"
+              >
+                <MenuItem value="">All Categories</MenuItem>
+                {Array.isArray(studentCategories) &&
+                  studentCategories.length > 0 &&
+                  studentCategories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       {/* Course Mode */}
       <Accordion>

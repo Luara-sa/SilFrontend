@@ -12,6 +12,7 @@ import { _CategoriesService } from "services/categories.service";
 import { categoryStore } from "store/categoryStore";
 import { filterStore } from "store/filterStore";
 import { useStudentCategories } from "hooks/useStudentCategories";
+import { useUserAccess } from "hooks/useUserAccess";
 
 export const dividerStyle = {
   width: "100%",
@@ -23,6 +24,7 @@ export const CategoriesMenuOptions = () => {
   const { setFilters, resetFilters } = filterStore();
   const { lang } = useTranslation();
   const router = useRouter();
+  const { canAccess, isLoading } = useUserAccess();
 
   // Use the new student categories hook
   const {
@@ -32,10 +34,19 @@ export const CategoriesMenuOptions = () => {
   } = useStudentCategories();
 
   useEffect(() => {
-    if (!studentCategories || studentCategories.length === 0) {
+    if (
+      !isLoading &&
+      canAccess.categories &&
+      (!studentCategories || studentCategories.length === 0)
+    ) {
       fetchStudentCategories();
     }
-  }, [studentCategories, fetchStudentCategories]);
+  }, [
+    studentCategories,
+    fetchStudentCategories,
+    canAccess.categories,
+    isLoading,
+  ]);
 
   const handleCategoryClick = (categoryId: number) => {
     // Reset existing filters and apply category filter
@@ -49,6 +60,11 @@ export const CategoriesMenuOptions = () => {
     // Navigate to courses page
     router.push("/courses");
   };
+
+  // Don't render categories for company users or while loading
+  if (isLoading || !canAccess.categories) {
+    return null;
+  }
 
   if (studentCategoriesLoading) {
     return (

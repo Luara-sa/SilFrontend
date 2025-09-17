@@ -102,7 +102,7 @@ const TopicPage = () => {
     if (!curriculum?.chapters || !currentTopic || !chapterId) return;
 
     let foundCurrent = false;
-    let nextTopic = null;
+    let nextTopic: CourseTopic | null = null;
     let nextChapterId = null;
 
     // Find current topic and get the next one
@@ -142,7 +142,7 @@ const TopicPage = () => {
     if (!curriculum?.chapters || !currentTopic || !chapterId) return false;
 
     let foundCurrent = false;
-    let nextTopic = null;
+    let nextTopic: CourseTopic | null = null;
 
     // Find current topic and get the next one
     for (const chapter of curriculum.chapters) {
@@ -169,7 +169,7 @@ const TopicPage = () => {
 
     for (const chapter of curriculum.chapters) {
       const topicIndex = chapter.topics.findIndex(
-        (t: CourseTopic) => t.id === nextTopic.id
+        (t: CourseTopic) => t.id === nextTopic?.id
       );
       if (topicIndex >= 0) {
         nextTopicIndex = topicIndex;
@@ -187,7 +187,7 @@ const TopicPage = () => {
     for (const chapter of curriculum.chapters) {
       const topics = chapter.topics;
       const nextTopicIdx = topics.findIndex(
-        (t: CourseTopic) => t.id === nextTopic.id
+        (t: CourseTopic) => t.id === nextTopic?.id
       );
 
       if (nextTopicIdx > 0) {
@@ -560,12 +560,17 @@ const TopicPage = () => {
                         chapterId={parseInt(String(chapterId))}
                         topicId={parseInt(String(topicId))}
                         quiz={topicContent.quiz}
+                        topicProgressStatus={currentTopic?.progress_status}
                         onQuizComplete={(passed, score) => {
                           console.log(
                             `Quiz completed: ${
                               passed ? "Passed" : "Failed"
                             }, Score: ${score}`
                           );
+
+                          // Refresh topic content to update progress status
+                          refetch();
+
                           if (passed) {
                             toast.success(
                               "Quiz completed successfully! Moving to next topic..."

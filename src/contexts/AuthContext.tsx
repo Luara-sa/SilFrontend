@@ -171,10 +171,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear auth service data
     _AuthService.doLogout();
 
-    // Redirect to login if not already there
-    const currentPath = router.pathname;
+    // Get current locale and redirect to login page
+    const currentPath = window.location.pathname;
+    const locale = currentPath.split("/")[1] || "en";
+    const isValidLocale = ["en", "ar"].includes(locale);
+    const redirectLocale = isValidLocale ? locale : "en";
+
+    // Redirect to login page if not already there
     if (!currentPath.startsWith("/auth/") && !currentPath.startsWith("/")) {
-      router.push("/auth/login");
+      router.push(`/${redirectLocale}/auth/login`);
     }
   }, [router]);
 

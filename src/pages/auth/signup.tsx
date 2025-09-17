@@ -164,17 +164,23 @@ const Signup = () => {
       _AuthService
         .socialLogin({
           access_token: codeResponse.access_token,
-          provider_name: "google",
+          provider: "google",
         })
         .then((res) => {
-          // Handle social login response - assuming it follows the new structure
+          // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
+          const responseData = res.data as any;
+
+          if (!responseData.status) {
+            throw new Error(responseData.message || "Social login failed");
+          }
+
+          const { profile, token } = responseData.data;
+
           const userData = {
-            user: (res.data as any).profile || (res.data as any).result?.user,
-            token:
-              (res.data as any).token || (res.data as any).result?.access_token,
-            role: ["student"], // Default role for now
+            user: profile,
+            token: token,
+            role: ["student"],
             info_system: {
-              // Mock info_system structure to prevent loading state
               english_level_enum: [],
               document_type_enum: {},
               vat_value: { vat: 0 },

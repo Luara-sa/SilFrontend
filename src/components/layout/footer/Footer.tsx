@@ -11,11 +11,13 @@ import { _CategoriesService } from "services/categories.service";
 import { categoryStore } from "store/categoryStore";
 import { filterStore } from "store/filterStore";
 import { StringDouble } from "interface/common";
+import { useUserAccess } from "hooks/useUserAccess";
 
 export const Footer = () => {
   const theme = useTheme();
   const { locale, push } = useRouter();
   const { t } = useTranslation("footer");
+  const { canAccess, isLoading } = useUserAccess();
 
   const setInitFilterParams = filterStore((state) => state.setInitFilterParams);
   const [categories, setCategories] = categoryStore((state) => [
@@ -37,6 +39,11 @@ export const Footer = () => {
   };
 
   const getCategories = () => {
+    // Don't fetch if still loading auth or if user can't access categories
+    if (isLoading || !canAccess.categories) {
+      return;
+    }
+
     _CategoriesService
       .getCategories()
       .then((res) => {
@@ -47,8 +54,11 @@ export const Footer = () => {
   };
 
   useEffect(() => {
-    getCategories();
-  }, []);
+    // Only run effect after auth is loaded
+    if (!isLoading) {
+      getCategories();
+    }
+  }, [canAccess.categories, isLoading]);
 
   const handleCategoryClick = (id: number) => {
     params.cat_ids.push(id);
@@ -201,39 +211,41 @@ export const Footer = () => {
                 </Link>
               </Box>
             </Box>
-            <Box sx={{ justifySelf: "start", mt: "30px" }}>
-              <Typography
-                sx={{
-                  fontSize: [18, 18, "1.354vw", "1.354vw", "1.354vw"],
-                  fontWeight: "700",
-                  color: { xs: "warning.main", md: "gray.active" },
-                }}
-              >
-                {t("categoris")}
-              </Typography>
-              <Box
-                sx={{
-                  mt: "30px",
-                  display: "flex",
-                  flexDirection: "column",
-                  rowGap: "15px",
-                }}
-              >
-                {categories?.map((category, index) => (
-                  <Typography
-                    onClick={() => handleCategoryClick(category?.id)}
-                    sx={{
-                      fontSize: [16, 17, "1.042vw", "1.042vw", "1.042vw"],
-                      color: "gray.active",
-                      cursor: "pointer",
-                    }}
-                    key={index}
-                  >
-                    {category?.name[locale as keyof StringDouble]}
-                  </Typography>
-                ))}
+            {canAccess.categories && (
+              <Box sx={{ justifySelf: "start", mt: "30px" }}>
+                <Typography
+                  sx={{
+                    fontSize: [18, 18, "1.354vw", "1.354vw", "1.354vw"],
+                    fontWeight: "700",
+                    color: { xs: "warning.main", md: "gray.active" },
+                  }}
+                >
+                  {t("categoris")}
+                </Typography>
+                <Box
+                  sx={{
+                    mt: "30px",
+                    display: "flex",
+                    flexDirection: "column",
+                    rowGap: "15px",
+                  }}
+                >
+                  {categories?.map((category, index) => (
+                    <Typography
+                      onClick={() => handleCategoryClick(category?.id)}
+                      sx={{
+                        fontSize: [16, 17, "1.042vw", "1.042vw", "1.042vw"],
+                        color: "gray.active",
+                        cursor: "pointer",
+                      }}
+                      key={index}
+                    >
+                      {category?.name[locale as keyof StringDouble]}
+                    </Typography>
+                  ))}
+                </Box>
               </Box>
-            </Box>
+            )}
           </Box>
           <Box
             sx={{
