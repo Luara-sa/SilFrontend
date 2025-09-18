@@ -38,8 +38,8 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host') || 'localhost:3000';
   const baseUrl = `${protocol}//${host}`;
   
-  // Get token from cookies (preferred) or localStorage (fallback)
-  const cookieToken = request.cookies.get("token")?.value;
+  // Get token from cookies (Next.js 12 middleware returns string | undefined)
+  const cookieToken = request.cookies.get("token");
   
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => 

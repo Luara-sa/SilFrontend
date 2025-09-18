@@ -1,5 +1,5 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 
-export const LoginLayout = ({ children }: { children: any }) => {
+export const LoginLayout: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   return <>{children}</>;
 };

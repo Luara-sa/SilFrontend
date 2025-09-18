@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useAuth } from "contexts/AuthContext";
 import Link from "next/link";
@@ -36,7 +37,7 @@ interface LoginFormData {
   password: string;
 }
 
-const LoginPage: React.FC = () => {
+const LoginPage: NextPage = () => {
   const { t } = useTranslation("auth");
   const router = useRouter();
   const { isAuthenticated, user, login } = useAuth();

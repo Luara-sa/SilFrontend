@@ -273,6 +273,7 @@ export interface User {
   username?: string;
   extra_phone?: string;
   delegate_active?: number;
+  user_type?: RoleType;
   // New fields from student profile API
   first_name?: string;
   last_name?: string;
