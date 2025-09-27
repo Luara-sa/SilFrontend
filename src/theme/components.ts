@@ -125,23 +125,19 @@ export const components: Components<Omit<Theme, "components">> | undefined = {
       html: {
         MozOsxFontSmoothing: "grayscale",
         WebkitFontSmoothing: "antialiased",
-        display: "flex",
-        flexDirection: "column",
         minHeight: "100%",
         width: "100%",
+        overflowX: "hidden",
       },
       body: {
-        display: "flex",
-        flex: "1 1 auto",
-        flexDirection: "column",
         minHeight: "100%",
         width: "100%",
+        margin: 0,
+        padding: 0,
+        overflowX: "hidden",
       },
       "#root": {
-        display: "flex",
-        flex: "1 1 auto",
-        flexDirection: "column",
-        height: "100%",
+        minHeight: "100%",
         width: "100%",
       },
       "#nprogress": {

@@ -21,8 +21,6 @@ export default class MyDocument extends Document {
           style={{
             overflowX: "hidden",
             // overflowY: "overlay",
-            maxWidth: 2000,
-            margin: "0 auto",
           }}
         >
           <Main />
