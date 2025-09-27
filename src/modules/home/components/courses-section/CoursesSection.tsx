@@ -36,7 +36,12 @@ export const CoursesSection = (props: Props) => {
         // minHeight: "100vh",
       }}
     >
-      <Box sx={{ width: { xs: "100vw", md: "80%" } }}>
+      <Box
+        sx={{
+          width: { xs: "100%", sm: "95%", md: "80%" },
+          px: { xs: 2, sm: 3, md: 0 },
+        }}
+      >
         <Box sx={{ mb: "50px" }}>
           <Typography
             sx={{
@@ -72,9 +77,10 @@ export const CoursesSection = (props: Props) => {
             <Box
               sx={{
                 display: "flex",
-                columnGap: "20px",
+                columnGap: { xs: "10px", sm: "15px", md: "20px" },
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "center",
               }}
             >
               {props.courses.map((course) => (

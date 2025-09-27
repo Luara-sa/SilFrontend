@@ -13,27 +13,28 @@ export const SmallCourseInfo: FC<SmallInfoProps> = (props) => {
       sx={{
         display: "flex",
         alignItems: "center",
-        columnGap: "2px",
-        flexDirection: { xs: "column", md: "row" },
+        columnGap: { xs: "4px", sm: "2px" },
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "center",
+        minWidth: { xs: "60px", sm: "auto" },
       }}
     >
       {props.icon}
       <Typography
         sx={{
           fontSize:
-            // Why important !? because the library (react-vertical-timeline-component)
-            // override the css styles; we should find better solution
             props.size === "small"
-              ? [
-                  "10px !important",
-                  "10px !important",
-                  "11px !important",
-                  "12px !important",
-                  "12px !important",
-                ]
-              : [],
+              ? {
+                  xs: "10px !important",
+                  sm: "10px !important",
+                  md: "11px !important",
+                  lg: "12px !important",
+                }
+              : { xs: "12px", sm: "13px", md: "14px" },
           color: "gray.50",
           textAlign: "center",
+          lineHeight: 1.2,
+          whiteSpace: "nowrap",
         }}
       >
         {props.title}

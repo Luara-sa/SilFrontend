@@ -71,16 +71,17 @@ export const CourseCard = (props: Props) => {
         borderRadius: "5px",
         boxShadow: "1px 2px 5px rgba(0, 0, 0, 0.25)",
         backgroundColor: "#FFFEFA",
-        maxWidth: "300px",
-        height: { xs: "350px", md: "455px" },
-        minWidth: { xs: "200px", md: "300" },
-        width: { xs: "200px", sm: "250px", md: "300px", lg: "300px" },
+        maxWidth: { xs: "100%", sm: "280px", md: "300px" },
+        height: { xs: "auto", sm: "400px", md: "455px" },
+        minWidth: { xs: "280px", sm: "250px", md: "300px" },
+        width: { xs: "100%", sm: "250px", md: "300px", lg: "300px" },
+        minHeight: { xs: "350px", sm: "400px", md: "455px" },
       }}
     >
       <Box
         sx={{
-          minWidth: "200px",
-          height: { xs: "137px", md: "200px" },
+          minWidth: { xs: "100%", md: "200px" },
+          height: { xs: "150px", sm: "160px", md: "200px" },
           backgroundColor: "gray.light",
           backgroundPosition: "left",
           backgroundSize: "cover",
@@ -115,12 +116,13 @@ export const CourseCard = (props: Props) => {
 
       <Box
         sx={{
-          px: 2,
-          pt: { xs: 0.5, md: 1.5 },
-          height: "calc(100% - 200px)",
+          px: { xs: 1.5, sm: 2 },
+          pt: { xs: 1, sm: 1.5, md: 1.5 },
+          height: { xs: "auto", md: "calc(100% - 200px)" },
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          flex: 1,
         }}
       >
         <Box sx={{}}>
@@ -132,19 +134,22 @@ export const CourseCard = (props: Props) => {
               <Typography
                 sx={{
                   color: "gray.50",
-                  fontSize: { xs: "14px", md: "18px" },
+                  fontSize: { xs: "16px", sm: "16px", md: "18px" },
                   fontWeight: 700,
                   cursor: "pointer",
                   lineHeight: {
-                    xs: name && name?.length > 29 ? "1.2rem" : "2.2rem",
-                    md: "initial",
+                    xs: "1.3",
+                    sm: "1.4",
+                    md: "1.5",
                   },
-                  // height: { xs: "auto", md: "3rem" },
+                  display: "-webkit-box",
+                  WebkitLineClamp: { xs: 2, sm: 2, md: 2 },
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {name && name?.length > 39
-                  ? name?.substring(0, 39) + "..."
-                  : name}
+                {name}
               </Typography>
             </Link>
           </BootstrapTooltip>
@@ -188,15 +193,18 @@ export const CourseCard = (props: Props) => {
             sx={{
               display: "flex",
               alignItems: "center",
-              // columnGap: "5px",
               borderBottom: "0.5px solid rgba(30, 91, 99, 0.19)",
               flexWrap: "wrap",
               justifyContent: "center",
-              rowGap: "10px",
-              py: { xs: "0", md: "8px" },
-              // cursor: "grab",
+              rowGap: { xs: "8px", sm: "10px" },
+              columnGap: { xs: "8px", sm: "10px" },
+              py: { xs: "8px", sm: "8px", md: "8px" },
               userSelect: "none",
-              px: isFourInfoDisplyed ? "25px" : "10px",
+              px: {
+                xs: "10px",
+                sm: isFourInfoDisplyed ? "15px" : "10px",
+                md: isFourInfoDisplyed ? "25px" : "10px",
+              },
               position: "relative",
             }}
           >
@@ -215,11 +223,21 @@ export const CourseCard = (props: Props) => {
             height: "100%",
             justifyContent: "space-between",
             alignItems: "center",
-            py: { xs: 1.5, md: 0 },
+            py: { xs: 1.5, sm: 1.5, md: 0 },
+            gap: { xs: 1, sm: 1.5 },
+            flexWrap: { xs: "wrap", sm: "nowrap" },
           }}
         >
           <Link href={courseUrl}>
-            <Button variant="default" sx={{ fontSize: [10, 10, 11, 12, 13] }}>
+            <Button
+              variant="default"
+              sx={{
+                fontSize: { xs: "12px", sm: "11px", md: "12px", lg: "13px" },
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.5, sm: 0.75 },
+                minWidth: { xs: "auto", sm: "80px" },
+              }}
+            >
               {isEnrolled
                 ? t("View Course")
                 : props.price && props.price > 0

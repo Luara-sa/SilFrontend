@@ -93,13 +93,18 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
           <>
             <Box
               sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                columnGap: "25px",
-                rowGap: "30px",
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(auto-fit, minmax(280px, 1fr))",
+                  md: "repeat(auto-fit, minmax(300px, 1fr))",
+                  lg: "repeat(auto-fit, minmax(300px, 1fr))",
+                },
+                gap: { xs: 2, sm: 3, md: 3 },
                 pb: "20px",
                 minHeight: "400px",
+                justifyContent: "center",
+                maxWidth: "100%",
               }}
             >
               {studentCourses.map((course: any) => {
