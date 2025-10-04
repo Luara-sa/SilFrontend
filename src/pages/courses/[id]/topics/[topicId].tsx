@@ -438,27 +438,6 @@ const TopicPage = () => {
                       />
                     </Box>
 
-                    {/* Video Info */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Video Source: {topicContent.video_src_type || "Unknown"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Having trouble viewing the video?{" "}
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={() => {
-                            if (topicContent.video_url) {
-                              window.open(topicContent.video_url, "_blank");
-                            }
-                          }}
-                        >
-                          Open in new tab
-                        </Button>
-                      </Typography>
-                    </Box>
-
                     {/* Related Topics */}
                     {topicContent.related_topics &&
                       topicContent.related_topics.length > 0 && (

@@ -206,30 +206,62 @@ export const useStudentCourses = (): UseStudentCoursesReturn => {
           filters
         );
 
-        if (response.status && response.data?.content) {
+        console.log("Hook - Full response:", response);
+        console.log("Hook - response.status:", response.status);
+        console.log("Hook - response.data:", response.data);
+        console.log("Hook - response.data?.content:", response.data?.content);
+        console.log(
+          "Hook - Has content?",
+          response.data?.content && Array.isArray(response.data.content)
+        );
+
+        // Check if we have data.content regardless of status field
+        if (response.data?.content && Array.isArray(response.data.content)) {
           const fetchedCourses = response.data.content;
+          console.log("Hook - Fetched courses count:", fetchedCourses.length);
           setStudentCourses(fetchedCourses);
 
           // Map to legacy Course structure for existing components
-          const mappedCourses =
-            mapStudentCoursesToCoursesLegacy(fetchedCourses);
-          setLegacyCourses(mappedCourses);
+          try {
+            const mappedCourses =
+              mapStudentCoursesToCoursesLegacy(fetchedCourses);
+            console.log("Hook - Mapped courses count:", mappedCourses.length);
+            setLegacyCourses(mappedCourses);
+          } catch (mapError: any) {
+            console.error("Hook - Mapping error:", mapError);
+            // Set empty array if mapping fails, but don't fail the whole fetch
+            setLegacyCourses([]);
+          }
 
           // Set pagination info from backend response
-          const paginationInfo = {
-            current_page: response.data.pagination.current_page,
-            last_page: response.data.pagination.last_page,
-            total: response.data.pagination.total,
-            has_next: response.data.pagination.has_next,
-          };
-          setPagination(paginationInfo);
+          if (response.data.pagination) {
+            const paginationInfo = {
+              current_page: response.data.pagination.current_page,
+              last_page: response.data.pagination.last_page,
+              total: response.data.pagination.total,
+              has_next: response.data.pagination.has_next,
+            };
+            setPagination(paginationInfo);
+          }
         } else {
+          console.error("Hook - Failed validation:", {
+            hasData: !!response.data,
+            hasContent: !!response.data?.content,
+            isArray: Array.isArray(response.data?.content),
+            status: response.status,
+          });
           setError(response.message || "Failed to fetch courses");
           setStudentCourses([]);
           setLegacyCourses([]);
           setPagination(null);
         }
       } catch (err: any) {
+        console.error("Hook - CATCH BLOCK TRIGGERED:", err);
+        console.error("Hook - Error details:", {
+          message: err.message,
+          stack: err.stack,
+          error: err,
+        });
         setError("Failed to fetch courses. Please check your connection.");
         setStudentCourses([]);
         setLegacyCourses([]);

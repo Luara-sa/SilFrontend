@@ -46,20 +46,29 @@ export const useMyEnrolledCourses = ({
       const response: StudentCoursesResponse =
         await _CourseService.getMyEnrolledCourses(pageNum, perPage);
 
-      if (response.status && response.data) {
+      // Check if we have data.content regardless of status field
+      if (response.data?.content && Array.isArray(response.data.content)) {
         setCourses(response.data.content);
-        setPagination({
-          currentPage: response.data.pagination.current_page,
-          totalPages: response.data.pagination.last_page,
-          totalCourses: response.data.pagination.total,
-          hasNext: response.data.pagination.has_next,
-          hasPrevious: response.data.pagination.current_page > 1,
-        });
+        if (response.data.pagination) {
+          setPagination({
+            currentPage: response.data.pagination.current_page,
+            totalPages: response.data.pagination.last_page,
+            totalCourses: response.data.pagination.total,
+            hasNext: response.data.pagination.has_next,
+            hasPrevious: response.data.pagination.current_page > 1,
+          });
+        }
         setCurrentPage(pageNum);
       } else {
-        throw new Error(
-          response.message || "Failed to fetch my enrolled courses"
-        );
+        setError(response.message || "Failed to fetch my enrolled courses");
+        setCourses([]);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalCourses: 0,
+          hasNext: false,
+          hasPrevious: false,
+        });
       }
     } catch (err: any) {
       setError(

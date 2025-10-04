@@ -36,6 +36,16 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
     // Local state
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+    // Debug logs
+    console.log("CoursesBodyWraper - studentCourses:", studentCourses);
+    console.log(
+      "CoursesBodyWraper - studentCourses length:",
+      studentCourses.length
+    );
+    console.log("CoursesBodyWraper - loading:", studentCoursesLoading);
+    console.log("CoursesBodyWraper - error:", studentCoursesError);
+    console.log("CoursesBodyWraper - pagination:", pagination);
+
     // Create a Set of enrolled course IDs for fast lookup
     const enrolledCourseIds = new Set(
       enrolledCourses.map((course) => course.id)

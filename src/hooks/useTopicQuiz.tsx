@@ -33,10 +33,27 @@ export const useTopicQuiz = ({
         quiz_id: quizId,
       };
 
-      await _QuizService.startQuiz(startRequest);
-      return true;
+      const response = await _QuizService.startQuiz(startRequest);
+
+      // Check if the response indicates quiz is already started
+      if (
+        !response.data.status &&
+        response.data.message === "You have already started this quiz."
+      ) {
+        // This is not an error - quiz is already in progress
+        return true; // Return true because the quiz is already started
+      }
+
+      return response.data.status;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to start quiz");
+      const errorMessage = err.response?.data?.message;
+
+      // "Already started" is not really an error - it means we can proceed
+      if (errorMessage === "You have already started this quiz.") {
+        return true;
+      }
+
+      setError(errorMessage || "Failed to start quiz");
       return false;
     } finally {
       setLoading(false);
@@ -58,10 +75,19 @@ export const useTopicQuiz = ({
         setQuizResult(response.data.data);
         return response.data.data;
       } else {
+        // Check if it's the expected "not found" response (no result exists yet)
+        // This is NOT an error - it just means the quiz hasn't been submitted yet
+        if (response.data.message === "response.not_found") {
+          setQuizResult(null);
+          return null;
+        }
+
+        // For other false statuses, set error (but don't show toast - interceptor handles it)
         setError(response.data.message || "Failed to get quiz result");
         return null;
       }
     } catch (err: any) {
+      // Only set error for actual network/server errors
       setError(err.response?.data?.message || "Failed to get quiz result");
       return null;
     } finally {

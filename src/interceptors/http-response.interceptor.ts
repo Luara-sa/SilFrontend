@@ -132,11 +132,17 @@ export const HttpResponseInterceptor = ({
           });
           break;
 
-        // Handle not found specifically for placement tests
+        // Handle not found specifically for placement tests and quizzes
         case 404:
           // Don't show error toast for placement test results - it's normal when no results exist
           if (error.config?.url?.includes('/placement-tests/') && error.config?.url?.includes('/result')) {
             // Silently handle placement test result not found - this is expected behavior
+            break;
+          }
+          
+          // Don't show error toast for quiz results - it's normal when no results exist
+          if (error.config?.url?.includes('/quizzes/') && error.config?.url?.includes('/result')) {
+            // Silently handle quiz result not found - this is expected behavior
             break;
           }
           
@@ -153,6 +159,17 @@ export const HttpResponseInterceptor = ({
           if (error.response?.data?.message) {
             // Don't show error toast for placement test results - it's normal when no results exist
             if (error.config?.url?.includes('/placement-tests/') && error.config?.url?.includes('/result')) {
+              break;
+            }
+            
+            // Don't show error toast for quiz results - it's normal when no results exist
+            if (error.config?.url?.includes('/quizzes/') && error.config?.url?.includes('/result')) {
+              break;
+            }
+            
+            // Don't show error toast for "already started" quiz message - it's expected behavior
+            if (error.config?.url?.includes('/quizzes/start') && 
+                error.response.data.message === "You have already started this quiz.") {
               break;
             }
             

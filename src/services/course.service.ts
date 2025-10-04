@@ -48,8 +48,48 @@ class CourseService {
     const url = `${ApiUtils.buildEndpoint('courses')}?page=${page}&per_page=${perPage}`;
     
     return _axios.get<any>(url).then((res) => {
-      // The axios response.data should already be the structured response
-      return res.data;
+      const responseData = res.data;
+      
+      // Handle different response formats
+      if (responseData.status !== undefined && responseData.data) {
+        return responseData;
+      }
+      
+      if (responseData.content && responseData.pagination) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData.content,
+            pagination: responseData.pagination
+          }
+        };
+      }
+      
+      if (Array.isArray(responseData)) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData,
+            pagination: {
+              current_page: page,
+              from: 0,
+              last_page: 1,
+              per_page: perPage,
+              to: responseData.length,
+              total: responseData.length,
+              count: responseData.length,
+              has_next: false,
+              next_page_url: null,
+              previous_page_url: null,
+              pagination_name: 'page'
+            }
+          }
+        };
+      }
+      
+      return responseData;
     }).catch((error) => {
       // Return error in expected format
       return {
@@ -118,8 +158,48 @@ class CourseService {
   // Method to fetch all courses for frontend filtering (legacy)
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
     return _axios.get<any>(`${ApiUtils.buildEndpoint('courses')}?per_page=1000`).then((res) => {
-      // The axios response.data should already be the structured response
-      return res.data;
+      const responseData = res.data;
+      
+      // Handle different response formats
+      if (responseData.status !== undefined && responseData.data) {
+        return responseData;
+      }
+      
+      if (responseData.content && responseData.pagination) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData.content,
+            pagination: responseData.pagination
+          }
+        };
+      }
+      
+      if (Array.isArray(responseData)) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData,
+            pagination: {
+              current_page: 1,
+              from: 0,
+              last_page: 1,
+              per_page: 1000,
+              to: responseData.length,
+              total: responseData.length,
+              count: responseData.length,
+              has_next: false,
+              next_page_url: null,
+              previous_page_url: null,
+              pagination_name: 'page'
+            }
+          }
+        };
+      }
+      
+      return responseData;
     }).catch((error) => {
       // Return error in expected format
       return {
@@ -266,9 +346,64 @@ class CourseService {
     
     const url = `${ApiUtils.buildEndpoint('courses')}?${queryParams.toString()}`;
     
+    console.log('CourseService: Fetching URL:', url);
+    
     return _axios.get<any>(url).then((res) => {
-      return res.data;
+      console.log('CourseService: Raw axios response:', res);
+      console.log('CourseService: Response data:', res.data);
+      console.log('CourseService: Response data type:', typeof res.data);
+      console.log('CourseService: Response data keys:', Object.keys(res.data || {}));
+      
+      // Handle different response formats
+      const responseData = res.data;
+      
+      // Case 1: Response has status, message, and data wrapper (expected format)
+      if (responseData.status !== undefined && responseData.data) {
+        return responseData;
+      }
+      
+      // Case 2: Response has content and pagination directly (alternative format)
+      if (responseData.content && responseData.pagination) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData.content,
+            pagination: responseData.pagination
+          }
+        };
+      }
+      
+      // Case 3: Response is an array of courses (legacy format)
+      if (Array.isArray(responseData)) {
+        return {
+          status: true,
+          message: 'Courses fetched successfully',
+          data: {
+            content: responseData,
+            pagination: {
+              current_page: page,
+              from: 0,
+              last_page: 1,
+              per_page: perPage,
+              to: responseData.length,
+              total: responseData.length,
+              count: responseData.length,
+              has_next: false,
+              next_page_url: null,
+              previous_page_url: null,
+              pagination_name: 'page'
+            }
+          }
+        };
+      }
+      
+      // If none of the above, return the data as-is (might fail validation later)
+      console.warn('CourseService: Unexpected response format', responseData);
+      return responseData;
     }).catch((error) => {
+      console.error('CourseService: Error caught:', error);
+      console.error('CourseService: Error response:', error.response);
       // Return error in expected format
       return {
         status: false,
@@ -421,10 +556,71 @@ class CourseService {
     
     const url = `${ApiUtils.buildEndpoint('my-courses')}?page=${page}&per_page=${perPage}`;
     
-    return _axios.get<StudentCoursesResponse>(url).then((res) => {
-      return res.data;
+    return _axios.get<any>(url).then((res) => {
+      const responseData = res.data;
+      
+      // Handle different response formats
+      if (responseData.status !== undefined && responseData.data) {
+        return responseData;
+      }
+      
+      if (responseData.content && responseData.pagination) {
+        return {
+          status: true,
+          message: 'My courses fetched successfully',
+          data: {
+            content: responseData.content,
+            pagination: responseData.pagination
+          }
+        };
+      }
+      
+      if (Array.isArray(responseData)) {
+        return {
+          status: true,
+          message: 'My courses fetched successfully',
+          data: {
+            content: responseData,
+            pagination: {
+              current_page: page,
+              from: 0,
+              last_page: 1,
+              per_page: perPage,
+              to: responseData.length,
+              total: responseData.length,
+              count: responseData.length,
+              has_next: false,
+              next_page_url: null,
+              previous_page_url: null,
+              pagination_name: 'page'
+            }
+          }
+        };
+      }
+      
+      return responseData;
     }).catch((error) => {
-      throw error;
+      // Return error in expected format instead of throwing
+      return {
+        status: false,
+        message: error.response?.data?.message || error.message || 'Failed to fetch my enrolled courses',
+        data: {
+          content: [],
+          pagination: {
+            current_page: page,
+            from: 0,
+            last_page: 1,
+            per_page: perPage,
+            to: 0,
+            total: 0,
+            count: 0,
+            has_next: false,
+            next_page_url: null,
+            previous_page_url: null,
+            pagination_name: 'page'
+          }
+        }
+      };
     });
   }
 
