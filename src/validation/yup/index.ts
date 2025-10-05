@@ -41,6 +41,7 @@ export const delegateRegisterSchema = Yup.object().shape({
 export const signupSchema = Yup.object().shape({
   first_name: Yup.string().required("First name is required"),
   last_name: Yup.string().required("Last name is required"),
+  id_number: Yup.string().required("ID number is required"),
   email: Yup.string().email().required(),
   password: Yup.string().required(),
   password_confirmation: Yup.string()

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 
 import { Box } from "@mui/material";
@@ -7,6 +7,7 @@ import useDeviceSize from "hooks/useDeviceSize";
 
 import { Breadcrumb } from "components/shared";
 import { CoursesBodyWraper } from "modules/courses/components/courses-content/CoursesBodyWraper";
+import { filterStore } from "store/filterStore";
 
 interface Props {
   courses: any;
@@ -15,6 +16,14 @@ interface Props {
 const Courses = (props: Props) => {
   const { isReady } = useRouter();
   const DeviceSize = useDeviceSize();
+  const resetFilters = filterStore((state) => state.resetFilters);
+
+  // Clear filters when navigating away from the courses page
+  useEffect(() => {
+    return () => {
+      resetFilters();
+    };
+  }, [resetFilters]);
 
   return (
     <Box sx={{ overflowX: "hidden" }}>

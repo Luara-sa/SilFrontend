@@ -95,9 +95,9 @@ export const HeaderDesktop = () => {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box sx={{ width: "280px" }}>
+          {/* <Box sx={{ width: "280px" }}>
             <SearchInput />
-          </Box>
+          </Box> */}
           {canAccess.placementTests && <PlacementTestButton />}
         </Box>
         <Box

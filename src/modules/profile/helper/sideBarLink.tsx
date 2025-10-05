@@ -21,21 +21,21 @@ export const studentSideBar = [
   //   index: "myPaths",
   //   icon: <img src="/assets/icons/my-paths.svg" />,
   // },
-  {
-    label: { en: "My Tests", ar: "إختباراتي" },
-    index: "myTests",
-    icon: <img src="/assets/icons/my-test.svg" />,
-  },
-  {
-    label: { en: "Placement Test", ar: "إختبار تحديد المستوى" },
-    index: "placementTest",
-    icon: <Placement />,
-  },
-  {
-    label: { en: "My Certificates", ar: "شهاداتي" },
-    index: "myCertificates",
-    icon: <img src="/assets/icons/Certificate.svg" />,
-  },
+  // {
+  //   label: { en: "My Tests", ar: "إختباراتي" },
+  //   index: "myTests",
+  //   icon: <img src="/assets/icons/my-test.svg" />,
+  // },
+  // {
+  //   label: { en: "Placement Test", ar: "إختبار تحديد المستوى" },
+  //   index: "placementTest",
+  //   icon: <Placement />,
+  // },
+  // {
+  //   label: { en: "My Certificates", ar: "شهاداتي" },
+  //   index: "myCertificates",
+  //   icon: <img src="/assets/icons/Certificate.svg" />,
+  // },
   {
     label: { en: "My Orders", ar: "طلباتي" },
     index: "myOrders",

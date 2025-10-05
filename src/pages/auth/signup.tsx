@@ -65,7 +65,6 @@ const Signup = () => {
 
     // Remove any legacy fields that shouldn't be sent to backend
     delete data.password2;
-    delete data.id_number;
     delete data.extra_phone; // This is handled separately if needed
 
     // Split phone number into prefix and number
@@ -87,6 +86,7 @@ const Signup = () => {
     const cleanPayload = {
       first_name: data.first_name,
       last_name: data.last_name,
+      id_number: data.id_number,
       email: data.email,
       password: data.password,
       password_confirmation: data.password_confirmation,
@@ -374,6 +374,16 @@ const Signup = () => {
                     {...register("last_name")}
                     error={Boolean(errors.last_name?.message)}
                     helperText={(errors.last_name?.message as any) || ""}
+                  />
+                </Box>
+                <Box>
+                  <TextFieldStyled
+                    variant="outlined"
+                    fullWidth
+                    placeholder="ID Number"
+                    {...register("id_number")}
+                    error={Boolean(errors.id_number?.message)}
+                    helperText={(errors.id_number?.message as any) || ""}
                   />
                 </Box>
                 <Box>

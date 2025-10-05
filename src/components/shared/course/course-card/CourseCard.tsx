@@ -1,14 +1,11 @@
 import React, { useMemo } from "react";
-
 import Link from "next/link";
-
-import { Box, Button, Rating, Typography } from "@mui/material";
-
+import Image from "next/image";
+import { Box, Button, Divider, Rating, Stack, Typography } from "@mui/material";
+import useTranslation from "next-translate/useTranslation";
 import { Teacher } from "components/shared/teacher/Teacher";
 import { SmallCourseInfoSlider } from "./SmallCourseInfoSlider";
 import { BootstrapTooltip } from "components/styled";
-import Image from "next/image";
-import useTranslation from "next-translate/useTranslation";
 import { PricingTag, PricingTagType } from "./pricing-tag/PricingTag";
 import { CoursePrice } from "./course-price/CoursePrice";
 
@@ -23,10 +20,9 @@ interface Props {
   id?: string | number;
   lessonCount?: number;
   discount: number;
-  navigateTo?: string; // Optional custom navigation URL
-  isEnrolled?: boolean; // Whether user is enrolled in this course
-  categoryName?: string; // Category name to display below course name
-  // New pricing props for better price display
+  navigateTo?: string;
+  isEnrolled?: boolean;
+  categoryName?: string;
   originalPrice?: number;
   discountedPrice?: number;
   currency?: string;
@@ -41,7 +37,6 @@ export const CourseCard = (props: Props) => {
     id,
     image,
     name,
-    price,
     rate,
     navigateTo,
     isEnrolled,
@@ -50,59 +45,55 @@ export const CourseCard = (props: Props) => {
     discountedPrice,
     currency,
   } = props;
-  const isFourInfoDisplyed = !!hours && !!lessonCount && !!level && !!type;
-  const [value, setValue] = React.useState<number | null>(rate ? rate : 0);
-  const { t } = useTranslation("home");
 
-  const hasPricingTag = props?.discount > 0 || props.price === 0;
+  const { t } = useTranslation("home");
+  const [value, setValue] = React.useState<number | null>(rate || 0);
+
+  const hasPricingTag = props.discount > 0 || props.price === 0;
   const pricingTagStatus: PricingTagType | undefined = useMemo(() => {
     if (props.discount === 100) return "free";
-    else if (props?.discount > 0) return "discount";
+    if (props.discount > 0) return "discount";
     return undefined;
-  }, [props.discount, props.price]);
+  }, [props.discount]);
 
-  // Determine navigation URL
   const courseUrl = navigateTo || `courses/${id}`;
+  const isFourInfoDisplayed = !!hours && !!lessonCount && !!level && !!type;
 
   return (
     <Box
       sx={{
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
-        borderRadius: "5px",
-        boxShadow: "1px 2px 5px rgba(0, 0, 0, 0.25)",
-        backgroundColor: "#FFFEFA",
-        maxWidth: { xs: "100%", sm: "280px", md: "300px" },
-        height: { xs: "auto", sm: "400px", md: "455px" },
-        minWidth: { xs: "280px", sm: "250px", md: "300px" },
-        width: { xs: "100%", sm: "250px", md: "300px", lg: "300px" },
-        minHeight: { xs: "350px", sm: "400px", md: "455px" },
+        borderRadius: 2.5,
+        bgcolor: "common.white",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+        transition: "box-shadow 180ms ease, transform 180ms ease",
+        outline: "1px solid rgba(0,0,0,0.04)",
+        "&:hover": {
+          transform: "translateY(-3px)",
+          boxShadow: "0 10px 22px rgba(0,0,0,0.10)",
+        },
+        width: 300,
+        minHeight: 460,
       }}
     >
+      {/* Media */}
       <Box
         sx={{
-          minWidth: { xs: "100%", md: "200px" },
-          height: { xs: "150px", sm: "160px", md: "200px" },
-          backgroundColor: "gray.light",
-          backgroundPosition: "left",
-          backgroundSize: "cover",
           position: "relative",
+          aspectRatio: "16/9", // keeps consistent height
+          bgcolor: "#f3f5f6",
           overflow: "hidden",
-          "&:hover": {
-            "& .course-card-pricing-tag": {
-              bottom: "-45px",
-              transition: "200ms",
-            },
-          },
         }}
       >
         <Image
-          src={image ?? ""}
-          layout="fill"
-          objectFit="cover"
-          alt="Course image"
+          src={image || "/assets/images/course-placeholder.png"}
+          alt={name || "Course image"}
+          width={300}
+          height={169} // 16:9 ratio
+          style={{ objectFit: "cover", width: "100%", height: "auto" }}
           loading="lazy"
-          // placeholder="blur"
-          // blurDataURL={image ?? " "}
         />
 
         {hasPricingTag && (
@@ -112,38 +103,43 @@ export const CourseCard = (props: Props) => {
             discount={props.discount}
           />
         )}
+        {/* Subtle gradient for title readability on busy images */}
+        <Box
+          sx={{
+            pointerEvents: "none",
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.12) 100%)",
+          }}
+        />
       </Box>
 
-      <Box
+      {/* Content */}
+      <Stack
+        spacing={1.25}
         sx={{
-          px: { xs: 1.5, sm: 2 },
-          pt: { xs: 1, sm: 1.5, md: 1.5 },
-          height: { xs: "auto", md: "calc(100% - 200px)" },
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
+          px: 2,
+          pt: 1.75,
+          pb: 2,
+          minHeight: 260,
           flex: 1,
         }}
       >
-        <Box sx={{}}>
-          <BootstrapTooltip
-            title={name && name?.length > 39 && name}
-            // placement="top"
-          >
+        {/* Title + Category */}
+        <Stack spacing={0.5}>
+          <BootstrapTooltip title={name && name.length > 42 ? name : ""}>
             <Link href={courseUrl}>
               <Typography
+                component="h3"
                 sx={{
-                  color: "gray.50",
-                  fontSize: { xs: "16px", sm: "16px", md: "18px" },
                   fontWeight: 700,
+                  fontSize: 16,
+                  lineHeight: 1.35,
+                  color: "text.primary",
                   cursor: "pointer",
-                  lineHeight: {
-                    xs: "1.3",
-                    sm: "1.4",
-                    md: "1.5",
-                  },
                   display: "-webkit-box",
-                  WebkitLineClamp: { xs: 2, sm: 2, md: 2 },
+                  WebkitLineClamp: 2,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -153,98 +149,79 @@ export const CourseCard = (props: Props) => {
               </Typography>
             </Link>
           </BootstrapTooltip>
+
           {categoryName && (
             <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                fontSize: "0.75rem",
-                mt: 0.5,
-                fontWeight: 400,
-              }}
+              variant="caption"
+              sx={{ color: "text.secondary", letterSpacing: 0.15 }}
             >
               {categoryName}
             </Typography>
           )}
-          <Box sx={{ pt: { xs: 1, md: 2 } }}>
-            <Rating
-              name="simple-controlled"
-              value={value}
-              size="small"
-              readOnly
-              onChange={(event, newValue) => {
-                setValue(newValue);
-              }}
-            />
-          </Box>
-          <Box
-            sx={{
-              borderBottom: "0.5px solid rgba(30, 91, 99, 0.19)",
-              py: { xs: 1, md: 1.5 },
-            }}
-          >
-            <Teacher
-              image="/assets/images/logo.svg"
-              name="SIL"
-              withTeacher={false}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              borderBottom: "0.5px solid rgba(30, 91, 99, 0.19)",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              rowGap: { xs: "8px", sm: "10px" },
-              columnGap: { xs: "8px", sm: "10px" },
-              py: { xs: "8px", sm: "8px", md: "8px" },
-              userSelect: "none",
-              px: {
-                xs: "10px",
-                sm: isFourInfoDisplyed ? "15px" : "10px",
-                md: isFourInfoDisplyed ? "25px" : "10px",
-              },
-              position: "relative",
-            }}
-          >
-            <SmallCourseInfoSlider
-              hours={hours}
-              level={level}
-              type={type}
-              lessonCount={lessonCount}
-              isFourInfoDisplyed={isFourInfoDisplyed}
-            />
-          </Box>
+        </Stack>
+
+        {/* Rating */}
+        <Rating
+          name="course-rating"
+          value={value}
+          size="small"
+          readOnly
+          onChange={(_, v) => setValue(v)}
+          sx={{ mt: 0.25 }}
+        />
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* Provider */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Teacher
+            image="/assets/images/logo.svg"
+            name="SIL"
+            withTeacher={false}
+          />
+        </Stack>
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* Meta */}
+        <Box sx={{ pt: 0.5 }}>
+          <SmallCourseInfoSlider
+            hours={hours}
+            level={level}
+            type={type}
+            lessonCount={lessonCount}
+            isFourInfoDisplyed={isFourInfoDisplayed}
+          />
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            height: "100%",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: { xs: 1.5, sm: 1.5, md: 0 },
-            gap: { xs: 1, sm: 1.5 },
-            flexWrap: { xs: "wrap", sm: "nowrap" },
-          }}
+
+        {/* Footer */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mt: "auto", pt: 0.5 }}
+          spacing={1.25}
         >
           <Link href={courseUrl}>
             <Button
-              variant="default"
+              variant="contained"
+              size="small"
               sx={{
-                fontSize: { xs: "12px", sm: "11px", md: "12px", lg: "13px" },
-                px: { xs: 1.5, sm: 2 },
-                py: { xs: 0.5, sm: 0.75 },
-                minWidth: { xs: "auto", sm: "80px" },
+                borderRadius: 2,
+                px: 1.75,
+                fontSize: 13,
+                textTransform: "none",
+                boxShadow: "none",
               }}
             >
-              {isEnrolled
-                ? t("View Course")
-                : props.price && props.price > 0
-                ? t("View Course")
-                : t("Enroll")}
+              {isEnrolled || props.price > 0 ? t("View Course") : t("Enroll")}
             </Button>
           </Link>
+
           <CoursePrice
             price={props.price}
             disable={hasPricingTag}
@@ -252,8 +229,8 @@ export const CourseCard = (props: Props) => {
             discountedPrice={discountedPrice}
             currency={currency}
           />
-        </Box>
-      </Box>
+        </Stack>
+      </Stack>
     </Box>
   );
 };
