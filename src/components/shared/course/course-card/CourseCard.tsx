@@ -74,28 +74,54 @@ export const CourseCard = (props: Props) => {
           transform: "translateY(-3px)",
           boxShadow: "0 10px 22px rgba(0,0,0,0.10)",
         },
-        width: 300,
-        minHeight: 460,
+        width: "100%",
+        maxWidth: { xs: "100%", sm: 300 },
+        minHeight: { xs: 420, sm: 460 },
       }}
     >
       {/* Media */}
+
       <Box
         sx={{
           position: "relative",
-          aspectRatio: "16/9", // keeps consistent height
-          bgcolor: "#f3f5f6",
+          width: "100%",
           overflow: "hidden",
+          borderTopLeftRadius: "inherit",
+          borderTopRightRadius: "inherit",
+
+          // Stable aspect on all browsers (incl. iOS Safari)
+          // xs ~ 60% (taller on phones), sm+ keeps 16:9
+          "&::before": {
+            content: '""',
+            display: "block",
+            paddingTop: { xs: "60%", sm: "56.25%" }, // 9/16 = 56.25%
+          },
+
+          // Optional subtle gradient for legibility
+          "& .media-gradient": {
+            pointerEvents: "none",
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.12) 100%)",
+          },
+
+          // Nice hover zoom (desktop only)
+          "& img": { transition: "transform .25s ease" },
+          "@media (hover: hover)": {
+            "&:hover img": { transform: "scale(1.04)" },
+          },
         }}
       >
         <Image
           src={image || "/assets/images/course-placeholder.png"}
           alt={name || "Course image"}
-          width={300}
-          height={169} // 16:9 ratio
-          style={{ objectFit: "cover", width: "100%", height: "auto" }}
-          loading="lazy"
+          layout="fill"
+          sizes="(max-width: 600px) 100vw, 300px"
+          style={{ objectFit: "cover" }}
+          priority={false}
         />
-
+        <Box className="media-gradient" />
         {hasPricingTag && (
           <PricingTag
             variants={pricingTagStatus}
@@ -103,26 +129,15 @@ export const CourseCard = (props: Props) => {
             discount={props.discount}
           />
         )}
-        {/* Subtle gradient for title readability on busy images */}
-        <Box
-          sx={{
-            pointerEvents: "none",
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.12) 100%)",
-          }}
-        />
       </Box>
-
       {/* Content */}
       <Stack
         spacing={1.25}
         sx={{
-          px: 2,
+          px: { xs: 1.5, sm: 2 },
           pt: 1.75,
           pb: 2,
-          minHeight: 260,
+          minHeight: { xs: 240, sm: 260 },
           flex: 1,
         }}
       >

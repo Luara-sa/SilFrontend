@@ -62,7 +62,11 @@ export const MyCourses = () => {
     <Box>
       <Box sx={{ pb: "13px", borderBottom: "1px solid #EEEEEE" }}>
         <Typography
-          sx={{ fontSize: "30px", fontWeight: 700, color: "primary.main" }}
+          sx={{
+            fontSize: { xs: "24px", sm: "30px" },
+            fontWeight: 700,
+            color: "primary.main",
+          }}
         >
           {t("my courses")}
         </Typography>
@@ -118,8 +122,8 @@ export const MyCourses = () => {
                   md: "repeat(3, 1fr)",
                   lg: "repeat(4, 1fr)",
                 },
-                gap: 3,
-                mt: 3,
+                gap: { xs: 2, sm: 3 },
+                mt: { xs: 2, sm: 3 },
               }}
             >
               {courses.map((course) => {
@@ -143,9 +147,16 @@ export const MyCourses = () => {
                   page={pagination.currentPage}
                   onChange={handlePageChange}
                   color="primary"
-                  size="large"
+                  size="medium"
                   showFirstButton
                   showLastButton
+                  sx={{
+                    "& .MuiPaginationItem-root": {
+                      fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
+                      minWidth: { xs: "28px", sm: "32px" },
+                      height: { xs: "28px", sm: "32px" },
+                    },
+                  }}
                 />
               </Box>
             )}

@@ -168,9 +168,16 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
                   page={currentPage}
                   onChange={handlePageChange}
                   color="primary"
-                  size="large"
+                  size="medium"
                   showFirstButton
                   showLastButton
+                  sx={{
+                    "& .MuiPaginationItem-root": {
+                      fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
+                      minWidth: { xs: "28px", sm: "32px" },
+                      height: { xs: "28px", sm: "32px" },
+                    },
+                  }}
                 />
               </Box>
             )}
