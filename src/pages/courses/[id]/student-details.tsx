@@ -307,10 +307,8 @@ const StudentCourseDetailsPage = () => {
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
                           {courseData.course_price.discounted_price ||
-                            courseData.course_price.price}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {courseData.course_price.currency}
+                            courseData.course_price.price}{" "}
+                          ﷼
                         </Typography>
                         {courseData.course_price.discounted_price && (
                           <Typography
@@ -318,7 +316,7 @@ const StudentCourseDetailsPage = () => {
                             sx={{ textDecoration: "line-through" }}
                             color="text.secondary"
                           >
-                            {courseData.course_price.price}
+                            {courseData.course_price.price} ﷼
                           </Typography>
                         )}
                       </Box>
@@ -882,24 +880,37 @@ const StudentCourseDetailsPage = () => {
                   Instructor
                 </Typography>
 
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
-                >
-                  <Avatar
-                    src={courseData.instructor.image}
-                    alt={`${courseData.instructor.first_name} ${courseData.instructor.last_name}`}
-                    sx={{ width: 60, height: 60 }}
-                  />
-                  <Box>
-                    <Typography variant="h6" fontWeight="500">
-                      {courseData.instructor.first_name}{" "}
-                      {courseData.instructor.last_name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {courseData.instructor.email}
-                    </Typography>
-                  </Box>
-                </Box>
+                {courseData.instructor ? (
+                  <>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Avatar
+                        src={courseData.instructor.image}
+                        alt={`${courseData.instructor.first_name} ${courseData.instructor.last_name}`}
+                        sx={{ width: 60, height: 60 }}
+                      />
+                      <Box>
+                        <Typography variant="h6" fontWeight="500">
+                          {courseData.instructor.first_name}{" "}
+                          {courseData.instructor.last_name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {courseData.instructor.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Instructor information not available
+                  </Typography>
+                )}
 
                 <Divider sx={{ my: 2 }} />
 

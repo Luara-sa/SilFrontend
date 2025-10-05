@@ -48,6 +48,7 @@ const TopicPage = () => {
     loading: curriculumLoading,
     error: curriculumError,
     isNotPurchased,
+    refetch: refetchCurriculum,
   } = useCourseCurriculum(id ? String(id) : null);
 
   // Find topic in curriculum to get basic info and chapter ID
@@ -137,71 +138,33 @@ const TopicPage = () => {
     }
   }, [curriculum, currentTopic, chapterId, id, router]);
 
-  // Function to check if next topic is accessible
-  const isNextTopicAccessible = useCallback(() => {
-    if (!curriculum?.chapters || !currentTopic || !chapterId) return false;
+  // Function to check if a next topic exists
+  const hasNextTopic = useCallback(() => {
+    if (!curriculum?.chapters || !currentTopic || !chapterId) {
+      return false;
+    }
 
     let foundCurrent = false;
-    let nextTopic: CourseTopic | null = null;
 
-    // Find current topic and get the next one
+    // Check if there's any topic after the current one
     for (const chapter of curriculum.chapters) {
       for (let i = 0; i < chapter.topics.length; i++) {
         const topic = chapter.topics[i];
 
         if (foundCurrent) {
-          nextTopic = topic;
-          break;
+          // Found a next topic
+          return true;
         }
 
         if (topic.id === currentTopic.id && chapter.id === chapterId) {
           foundCurrent = true;
         }
       }
-
-      if (nextTopic) break;
     }
 
-    if (!nextTopic) return false; // No next topic exists
-
-    // Find the index of next topic in its chapter
-    let nextTopicIndex = -1;
-
-    for (const chapter of curriculum.chapters) {
-      const topicIndex = chapter.topics.findIndex(
-        (t: CourseTopic) => t.id === nextTopic?.id
-      );
-      if (topicIndex >= 0) {
-        nextTopicIndex = topicIndex;
-        break;
-      }
-    }
-
-    if (nextTopicIndex < 0) return false;
-
-    // First topic in any chapter is always accessible
-    if (nextTopicIndex === 0) return true;
-
-    // For subsequent topics, check if previous topic requirements are met
-    // Find the previous topic in the same chapter
-    for (const chapter of curriculum.chapters) {
-      const topics = chapter.topics;
-      const nextTopicIdx = topics.findIndex(
-        (t: CourseTopic) => t.id === nextTopic?.id
-      );
-
-      if (nextTopicIdx > 0) {
-        const previousTopic = topics[nextTopicIdx - 1];
-
-        // Check if previous topic is completed using progress_status from API
-        return previousTopic.progress_status === "completed";
-      }
-    }
-
-    return true;
+    // No next topic found
+    return false;
   }, [curriculum, currentTopic, chapterId]);
-
-  // Manual mark as complete functionality will be handled by button click
 
   if (loading) {
     return (
@@ -381,9 +344,9 @@ const TopicPage = () => {
                 {/* Video Content */}
                 {topicContent.type === "video" && topicContent.video_url ? (
                   <Box>
-                    <Typography variant="h6" gutterBottom>
+                    {/* <Typography variant="h6" gutterBottom>
                       Video Content
-                    </Typography>
+                    </Typography> */}
 
                     {/* Video Description */}
                     {topicContent.description && (
@@ -541,14 +504,9 @@ const TopicPage = () => {
                         quiz={topicContent.quiz}
                         topicProgressStatus={currentTopic?.progress_status}
                         onQuizComplete={(passed, score) => {
-                          console.log(
-                            `Quiz completed: ${
-                              passed ? "Passed" : "Failed"
-                            }, Score: ${score}`
-                          );
-
-                          // Refresh topic content to update progress status
+                          // Refresh both topic content and curriculum to update progress status
                           refetch();
+                          refetchCurriculum();
 
                           if (passed) {
                             toast.success(
@@ -572,22 +530,28 @@ const TopicPage = () => {
                         </Alert>
 
                         {/* Navigate to next topic button */}
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="large"
-                          disabled={!isNextTopicAccessible()}
-                          onClick={() => {
-                            if (isNextTopicAccessible()) {
-                              navigateToNextTopic();
+                        {hasNextTopic() ? (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="large"
+                            onClick={navigateToNextTopic}
+                            sx={{ minWidth: 200 }}
+                          >
+                            Next Topic
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            size="large"
+                            onClick={() =>
+                              router.push(`/courses/${id}/curriculum`)
                             }
-                          }}
-                          sx={{ minWidth: 200 }}
-                        >
-                          {isNextTopicAccessible()
-                            ? "Next Topic"
-                            : "Complete Previous Topics"}
-                        </Button>
+                            sx={{ minWidth: 200 }}
+                          >
+                            Back to Curriculum
+                          </Button>
+                        )}
                       </Box>
                     )}
                   </Box>
@@ -624,20 +588,15 @@ const TopicPage = () => {
           >
             Back to Curriculum
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!isNextTopicAccessible()}
-            onClick={() => {
-              if (isNextTopicAccessible()) {
-                navigateToNextTopic();
-              }
-            }}
-          >
-            {isNextTopicAccessible()
-              ? "Next Topic"
-              : "Complete Previous Topics"}
-          </Button>
+          {hasNextTopic() && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={navigateToNextTopic}
+            >
+              Next Topic
+            </Button>
+          )}
         </Box>
       </Box>
     </>

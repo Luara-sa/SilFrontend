@@ -18,7 +18,9 @@ import { eventEmitter } from "services/eventEmitter";
 const defaultFormValues = {
   name: "",
   email: "",
-  description: "",
+  phone: "",
+  subject: "",
+  message: "",
 };
 
 const ContactUS = () => {
@@ -27,22 +29,26 @@ const ContactUS = () => {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const validationSchema = Yup.object().shape({
-    name: Yup.string().required(),
-    email: Yup.string().email().required(),
-    description: Yup.string().required(),
+    name: Yup.string().required("Name is required"),
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    phone: Yup.string().required("Phone is required"),
+    subject: Yup.string().required("Subject is required"),
+    message: Yup.string().required("Message is required"),
   });
 
   const formOptions = {
     resolver: yupResolver(validationSchema),
-    defaultValues: { defaultFormValues },
+    defaultValues: defaultFormValues,
   };
   const { register, handleSubmit, formState, reset } = useForm(formOptions);
   const { errors } = formState;
 
   const onSubmit = (input: any) => {
     setIsSubmitLoading(true);
+    // Exclude defaultFormValues key from the payload
+    const { defaultFormValues: _, ...data } = input;
     _WithoutAuthService
-      .contactUs(input)
+      .contactUs(data)
       .then((res: any) => {
         reset(defaultFormValues);
         eventEmitter.emit("enqueueSnackbar", {
@@ -193,6 +199,31 @@ const ContactUS = () => {
               <Box
                 sx={{
                   width: "100%",
+                  display: "flex",
+                  columnGap: "20px",
+                  mt: "20px",
+                }}
+              >
+                <TextFieldStyled
+                  variant="outlined"
+                  fullWidth
+                  placeholder="Phone"
+                  {...register("phone")}
+                  error={Boolean(errors.phone?.message)}
+                  helperText={(errors.phone?.message as any) || ""}
+                />
+                <TextFieldStyled
+                  variant="outlined"
+                  fullWidth
+                  placeholder="Subject"
+                  {...register("subject")}
+                  error={Boolean(errors.subject?.message)}
+                  helperText={(errors.subject?.message as any) || ""}
+                />
+              </Box>
+              <Box
+                sx={{
+                  width: "100%",
                   postion: "relative",
                   mt: "20px",
                 }}
@@ -202,10 +233,10 @@ const ContactUS = () => {
                   fullWidth
                   multiline
                   rows={10}
-                  placeholder="Description"
-                  {...register("description")}
-                  error={Boolean(errors.description?.message)}
-                  helperText={(errors.description?.message as any) || ""}
+                  placeholder="Message"
+                  {...register("message")}
+                  error={Boolean(errors.message?.message)}
+                  helperText={(errors.message?.message as any) || ""}
                   sx={{
                     "& .MuiInputBase-multiline ": { padding: 0 },
                   }}

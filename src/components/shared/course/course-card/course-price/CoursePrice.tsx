@@ -26,10 +26,11 @@ export const CoursePrice = ({
   // Format currency display
   const formatPrice = (priceValue: number) => {
     const valueWithFixedDecimals = Number(priceValue).toFixed(2);
-    if (currency && currency.includes("SAR")) {
-      return `${valueWithFixedDecimals} ${currency}`;
+    // Always use the new Saudi Riyal symbol for SAR currency
+    if (currency && (currency.includes("SAR") || currency.includes("﷼"))) {
+      return `${valueWithFixedDecimals} ﷼`;
     }
-    return `${valueWithFixedDecimals} ${currency || t("sar")}`;
+    return `${valueWithFixedDecimals} ${currency || "﷼"}`;
   };
 
   if (disable && hasDiscount) {

@@ -1,6 +1,5 @@
 import { AxiosResponse } from "axios";
 import { _axios } from "interceptors/http-config";
-import { ApiUtils } from "utils/apiUtils";
 
 class WithoutAuthService {
   private static _instance: WithoutAuthService;
@@ -16,15 +15,14 @@ class WithoutAuthService {
     subject: string;
     message: string;
   }): Promise<AxiosResponse<any, any>> {
-    // Use shared contact endpoint with dynamic prefix
-    return _axios.post<any>(`${ApiUtils.buildSharedEndpoint('shared/contacts')}`, data).then((res: any) => {
+    return _axios.post<any>('app/shared/contacts', data).then((res: any) => {
       return res;
     });
   }
 
   // NEW: Method to get sliders
   getSliders(): Promise<AxiosResponse<any, any>> {
-    return _axios.get<any>(`${ApiUtils.buildSharedEndpoint('shared/sliders')}`).then((res: any) => {
+    return _axios.get<any>('web/shared/sliders').then((res: any) => {
       return res;
     });
   }

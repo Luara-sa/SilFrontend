@@ -152,11 +152,7 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
                     currency={course.course_price?.currency || "SAR"}
                     categoryName={course.category?.name}
                     isEnrolled={isEnrolled}
-                    navigateTo={
-                      isEnrolled
-                        ? `courses/${course.id}/curriculum`
-                        : `courses/${course.id}/student-details`
-                    }
+                    navigateTo={`courses/${course.id}/student-details`}
                   />
                 );
               })}

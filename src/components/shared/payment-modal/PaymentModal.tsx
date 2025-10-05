@@ -283,7 +283,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {courseName}
           </Typography>
           <Typography variant="h4" color="primary" fontWeight="700">
-            {coursePrice} SAR
+            {coursePrice} ﷼
           </Typography>
         </Box>
 
