@@ -42,10 +42,13 @@ class CourseService {
 
 
 
-  // Updated method for courses API - works for both student and company
+  // Updated method for courses API - works for both student and company and unauthenticated users
   getStudentCourses(page: number = 1, perPage: number = 15): Promise<StudentCoursesResponse> {
-    // This endpoint is available for both students and companies
-    const url = `${ApiUtils.buildEndpoint('courses')}?page=${page}&per_page=${perPage}`;
+    // Courses can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint('courses')}` 
+      : 'student/courses';
+    const url = `${endpoint}?page=${page}&per_page=${perPage}`;
     
     return _axios.get<any>(url).then((res) => {
       const responseData = res.data;
@@ -157,7 +160,11 @@ class CourseService {
 
   // Method to fetch all courses for frontend filtering (legacy)
   getAllStudentCourses(): Promise<StudentCoursesResponse> {
-    return _axios.get<any>(`${ApiUtils.buildEndpoint('courses')}?per_page=1000`).then((res) => {
+    // Courses can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint('courses')}` 
+      : 'student/courses';
+    return _axios.get<any>(`${endpoint}?per_page=1000`).then((res) => {
       const responseData = res.data;
       
       // Handle different response formats
@@ -344,7 +351,11 @@ class CourseService {
       }
     }
     
-    const url = `${ApiUtils.buildEndpoint('courses')}?${queryParams.toString()}`;
+    // Courses can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint('courses')}` 
+      : 'student/courses';
+    const url = `${endpoint}?${queryParams.toString()}`;
     
     console.log('CourseService: Fetching URL:', url);
     
@@ -430,9 +441,12 @@ class CourseService {
 
   // Method to get student course details
   getStudentCourseDetails(id: string | number): Promise<StudentCourseDetailsResponse> {
-    const url = `${ApiUtils.buildEndpoint(`courses/${id}/details`)}`;
+    // Course details can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint(`courses/${id}/details`)}` 
+      : `student/courses/${id}/details`;
     
-    return _axios.get<StudentCourseDetailsResponse>(url).then((res) => {
+    return _axios.get<StudentCourseDetailsResponse>(endpoint).then((res) => {
       return res.data;
     }).catch((error) => {
       throw error;
@@ -441,9 +455,12 @@ class CourseService {
 
   // Method to get detailed student course information
   getDetailedStudentCourse(id: string | number): Promise<DetailedStudentCourseResponse> {
-    const url = `${ApiUtils.buildEndpoint(`courses/${id}`)}`;
+    // Course details can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint(`courses/${id}`)}` 
+      : `student/courses/${id}`;
     
-    return _axios.get<DetailedStudentCourseResponse>(url).then((res) => {
+    return _axios.get<DetailedStudentCourseResponse>(endpoint).then((res) => {
       return res.data;
     }).catch((error) => {
       throw error;

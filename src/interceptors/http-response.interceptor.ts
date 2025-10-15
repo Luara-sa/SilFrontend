@@ -48,16 +48,36 @@ export const HttpResponseInterceptor = ({
     function (error) {
       // make a copy of the original request to do it again incase we need to refresh the token
       const originalRequest = error?.config;
+      
+      // List of public endpoints that can be accessed without authentication
+      const publicEndpoints = [
+        'student/courses',
+        'student/categories',
+        'company/courses',
+        'getCourses',
+        'getCategories'
+      ];
+      
+      // Check if this is a public endpoint
+      const isPublicEndpoint = publicEndpoints.some(endpoint => 
+        originalRequest?.url?.includes(endpoint)
+      );
 
       switch (error?.response?.status) {
         // Handle unauthorized access (token expired/invalid)
         case 401:
-          console.warn('401 Unauthorized: Token expired or invalid');
-          enqueueSnackbar('Session expired. Please log in again.', {
-            variant: "warning",
-            autoHideDuration: 3000,
-          });
-          _AuthService.forceLogout('Token expired or invalid (401)');
+          // For public endpoints, don't force logout - they can be accessed without auth
+          if (!isPublicEndpoint) {
+            console.warn('401 Unauthorized: Token expired or invalid');
+            enqueueSnackbar('Session expired. Please log in again.', {
+              variant: "warning",
+              autoHideDuration: 3000,
+            });
+            _AuthService.forceLogout('Token expired or invalid (401)');
+          } else {
+            // For public endpoints, just log the 401 but don't force logout
+            console.log('401 on public endpoint - unauthenticated access is allowed');
+          }
           break;
 
         // Handle forbidden access

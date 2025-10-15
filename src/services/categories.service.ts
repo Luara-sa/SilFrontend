@@ -18,18 +18,20 @@ class CategoriesService {
   }
 
   getCategories(): Promise<RootObj<Category[]>> {
-    if (!ApiUtils.isStudentUser()) {
-      this.throwCompanyAccessError('Categories');
-    }
-    return _axios.get<any>(`${ApiUtils.buildEndpoint('categories')}`).then((res) => res.data);
+    // Categories can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint('categories')}` 
+      : 'student/categories';
+    return _axios.get<any>(endpoint).then((res) => res.data);
   }
 
   // New method for student categories API with pagination support
   getStudentCategories(page: number = 1, per_page: number = 15): Promise<StudentCategoriesResponse> {
-    if (!ApiUtils.isStudentUser()) {
-      this.throwCompanyAccessError('Categories');
-    }
-    return _axios.get<StudentCategoriesResponse>(`${ApiUtils.buildEndpoint('categories')}`, {
+    // Categories can be viewed without authentication
+    const endpoint = ApiUtils.isStudentUser() 
+      ? `${ApiUtils.buildEndpoint('categories')}` 
+      : 'student/categories';
+    return _axios.get<StudentCategoriesResponse>(endpoint, {
       params: { page, per_page }
     }).then((res) => res.data);
   }

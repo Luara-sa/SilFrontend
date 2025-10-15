@@ -138,9 +138,11 @@ const ContactUS = () => {
                       //  mt: "20vh"
                     }}
                   >
-                    In diam consequat nec eu. Eu sem nec vel, sollicitudin ipsum
-                    viverra sed nibh amet. Nunc, et pharetra, duis tortor dictum
-                    nisl. Id vestibulum tincidunt adipiscing gravida risus.
+                    We&apos;re here to help you on your learning journey.
+                    Whether you have questions about our courses, need technical
+                    support, or want to discuss corporate training solutions,
+                    our team is ready to assist you. Reach out to us and
+                    we&apos;ll respond within 24 hours.
                   </Typography>
                 </Box>
               </Box>

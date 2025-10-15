@@ -21,12 +21,7 @@ export const useStudentCategories = () => {
   } = storeData;
 
   const fetchStudentCategories = useCallback(async () => {
-    // Don't fetch categories for company users
-    if (!ApiUtils.isStudentUser()) {
-      console.warn("Categories are not available for company users");
-      return [];
-    }
-
+    // Categories can be viewed without authentication
     try {
       setStudentCategoriesLoading(true);
       const response = await _CategoriesService.getAllStudentCategories();

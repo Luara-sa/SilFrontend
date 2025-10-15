@@ -136,9 +136,9 @@ export const MyPathCard = (props: Props) => {
           </Box>
           <Box sx={{ color: "gray.50", mt: "10px" }}>
             <Typography sx={{ fontSize: [6, 6, 8, 8, 8] }}>
-              Lorem ipsum is placeholder text commonly used in the graphic,
-              print, and publishing industries for previewing layouts and visual
-              mockups.
+              A comprehensive learning path designed to build your expertise
+              progressively through carefully curated courses and hands-on
+              projects.
             </Typography>
           </Box>
           <Box

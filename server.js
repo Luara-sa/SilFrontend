@@ -4,8 +4,9 @@ const { parse } = require('url')
 const next = require('next')
 
 const dev = process.env.NODE_ENV !== 'production'
-const port=process.env.PORT || 3003
-const hostname = 'localhost'
+const port = process.env.PORT || 3003
+// Use 0.0.0.0 in production to bind to all network interfaces, localhost in dev
+const hostname = process.env.HOST || (dev ? 'localhost' : '0.0.0.0')
 
 
 // when using middleware `hostname` and `port` must be provided below

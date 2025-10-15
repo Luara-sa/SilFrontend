@@ -45,24 +45,19 @@ export const PrivacyPolicy = (props: Props) => {
           <Typography
             sx={{ color: "#888888", fontSize: "20px", fontWeight: "500" }}
           >
-            Lorem ipsum, or lipsum as it is sometimes known, is dummy text used
-            in laying out print, graphic or web designs. The passage is
-            attributed to an unknown typesetter in the 15th century who is
-            thought to have scrambled parts of Cicero&apos;s De Finibus Bonorum
-            et Malorum for use in a type specimen book. It usually begins with:
-            “Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.” The
-            purpose of lorem ipsum is to create a natural looking block of text
-            (sentence, paragraph, page, etc.) that doesn&apos;t distract from
-            the layout. A practice not without controversy, laying out pages
-            with meaningless filler text can be very useful when the focus is
-            meant to be on design, not content. The passage experienced a surge
-            in popularity during the 1960s when Letraset used it on their
-            dry-transfer sheets, and again during the 90s as desktop publishers
-            bundled the text with their software. Today it&apos;s seen all
-            around the web; on templates, websites, and stock designs. Use our
-            generator to get your own, or read on for the authoritative history
-            of lorem ipsum.
+            This placement test is designed to assess your current knowledge and
+            skill level. The results will help us recommend the most suitable
+            courses and learning paths for you. By proceeding with this test,
+            you agree to: (1) Complete the test honestly without external
+            assistance, (2) Allow us to use your results to personalize your
+            learning experience, (3) Understand that test results are for
+            assessment purposes only and do not affect your enrollment
+            eligibility. The test typically takes 30-45 minutes to complete. You
+            can take breaks between sections, but each section must be completed
+            in one sitting. Your responses are confidential and will only be
+            used to enhance your educational journey with us. If you have any
+            questions or concerns about the test, please contact our support
+            team before proceeding.
           </Typography>
         </Box>
       </Box>

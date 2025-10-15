@@ -30,13 +30,18 @@ export class ApiUtils {
     try {
       const meData = meStore.getState().me;
       
+      // If no user data, default to student for public access
+      if (!meData || !meData.user) {
+        return 'student';
+      }
+      
       // Check user type from the user object
-      if (meData?.user?.user_type) {
+      if (meData.user.user_type) {
         return meData.user.user_type === 'company' ? 'company' : 'student';
       }
       
       // Check from role array (fallback)
-      if (meData?.role && Array.isArray(meData.role)) {
+      if (meData.role && Array.isArray(meData.role)) {
         const hasCompanyRole = meData.role.includes('company');
         const hasStudentRole = meData.role.includes('student');
         
@@ -117,9 +122,22 @@ export class ApiUtils {
 
   /**
    * Check if current user is a student user
+   * @param allowUnauthenticated - If true, returns true for unauthenticated users (default: false)
    */
-  static isStudentUser(): boolean {
-    return this.getApiPrefix() === 'student';
+  static isStudentUser(allowUnauthenticated: boolean = false): boolean {
+    try {
+      const meData = meStore.getState().me;
+      
+      // If no user data and we allow unauthenticated access
+      if ((!meData || !meData.user) && allowUnauthenticated) {
+        return true;
+      }
+      
+      return this.getApiPrefix() === 'student';
+    } catch (error) {
+      // For unauthenticated access scenarios
+      return allowUnauthenticated;
+    }
   }
 
   /**

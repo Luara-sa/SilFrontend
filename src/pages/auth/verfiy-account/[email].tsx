@@ -239,7 +239,7 @@ const VerfiyAccount = () => {
                       //  mt: "20vh"
                     }}
                   >
-                    Lorem ipsum is placeholder text commonly used in the graphic
+                    Verify Your Account
                   </Typography>
 
                   <Typography
@@ -249,9 +249,9 @@ const VerfiyAccount = () => {
                       //  mt: "5vh"
                     }}
                   >
-                    Lorem ipsum is placeholder text commonly used in the
-                    graphic, print, and publishing industries for previewing
-                    layouts and visual mockups.
+                    We&apos;ve sent a verification code to your email address.
+                    Please enter the code below to activate your account and
+                    start learning.
                   </Typography>
                   <Box>
                     <Typography sx={{ fontSize: "14px", color: "gray.active" }}>

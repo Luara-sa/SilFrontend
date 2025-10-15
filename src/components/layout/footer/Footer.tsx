@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -38,12 +38,8 @@ export const Footer = () => {
     tags: "",
   };
 
-  const getCategories = () => {
-    // Don't fetch if still loading auth or if user can't access categories
-    if (isLoading || !canAccess.categories) {
-      return;
-    }
-
+  const getCategories = useCallback(() => {
+    // Categories can be viewed without authentication
     _CategoriesService
       .getCategories()
       .then((res) => {
@@ -51,14 +47,12 @@ export const Footer = () => {
         setCategories(res.result);
       })
       .catch((err) => console.error(err));
-  };
+  }, [setCategories]);
 
   useEffect(() => {
-    // Only run effect after auth is loaded
-    if (!isLoading) {
-      getCategories();
-    }
-  }, [canAccess.categories, isLoading]);
+    // Fetch categories on mount (no auth required)
+    getCategories();
+  }, [getCategories]);
 
   const handleCategoryClick = (id: number) => {
     params.cat_ids.push(id);
@@ -116,11 +110,7 @@ export const Footer = () => {
                 pr: "20px",
               }}
             >
-              Gastropub chillwave lumbersexual umami lyft. Poke austin direct
-              trade, marfa raclette letterpress actually. Chartreuse sriracha
-              pinterest twee lo-fi try-hard. Meditation banh mi kitsch, prism
-              organic hot chicken literally heirloom occupy af semiotics food
-              truck.
+              {t("description")}
             </Typography>
             <Box sx={{ display: { xs: "none", md: "block" } }}>
               <Link href="/courses">
@@ -211,46 +201,44 @@ export const Footer = () => {
                 </Link>
               </Box>
             </Box>
-            {canAccess.categories && (
-              <Box sx={{ justifySelf: "start", mt: "30px" }}>
-                <Typography
-                  sx={{
-                    fontSize: [18, 18, "1.354vw", "1.354vw", "1.354vw"],
-                    fontWeight: "700",
-                    color: { xs: "warning.main", md: "gray.active" },
-                  }}
-                >
-                  {t("categoris")}
-                </Typography>
-                <Box
-                  sx={{
-                    mt: "30px",
-                    display: "flex",
-                    flexDirection: "column",
-                    rowGap: "15px",
-                  }}
-                >
-                  {categories?.map((category, index) => (
-                    <Typography
-                      onClick={() => handleCategoryClick(category?.id)}
-                      sx={{
-                        fontSize: [16, 17, "1.042vw", "1.042vw", "1.042vw"],
-                        color: "gray.active",
-                        cursor: "pointer",
-                      }}
-                      key={index}
-                    >
-                      {category?.name[locale as keyof StringDouble]}
-                    </Typography>
-                  ))}
-                </Box>
+            <Box sx={{ justifySelf: "start", mt: "30px" }}>
+              <Typography
+                sx={{
+                  fontSize: [18, 18, "1.354vw", "1.354vw", "1.354vw"],
+                  fontWeight: "700",
+                  color: { xs: "warning.main", md: "gray.active" },
+                }}
+              >
+                {t("categories")}
+              </Typography>
+              <Box
+                sx={{
+                  mt: "30px",
+                  display: "flex",
+                  flexDirection: "column",
+                  rowGap: "15px",
+                }}
+              >
+                {categories?.map((category, index) => (
+                  <Typography
+                    onClick={() => handleCategoryClick(category?.id)}
+                    sx={{
+                      fontSize: [16, 17, "1.042vw", "1.042vw", "1.042vw"],
+                      color: "gray.active",
+                      cursor: "pointer",
+                    }}
+                    key={index}
+                  >
+                    {category?.name[locale as keyof StringDouble]}
+                  </Typography>
+                ))}
               </Box>
-            )}
+            </Box>
           </Box>
           <Box
             sx={{
               justifySelf: { xs: "center", md: "end" },
-              disply: "flex",
+              display: "flex",
               flexDirection: "column",
               // justifyContent: { xs: "center", md: "start" },
               // alignItems: { xs: "center", md: "start" },

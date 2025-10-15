@@ -4,7 +4,7 @@ import Cookies from "cookies";
 
 const proxy = createProxyServer();
 
-const BACKEND_URL = process.env.BACKEND_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "https://backend.sil-sa.com";
 
 // eslint-disable-next-line import/no-anonymous-default-export
 export default (

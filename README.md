@@ -1,6 +1,31 @@
-# Website_SIL
+# SIL Frontend - Next.js Application
 
+## Production Deployment
 
+### Environment Setup
+
+On production server, create `.env.production`:
+```bash
+cat > .env.production << 'EOF'
+NEXT_PUBLIC_BACKEND_URL=https://backend.sil-sa.com
+NODE_ENV=production
+PORT=3003
+HOST=0.0.0.0
+EOF
+```
+
+Then rebuild and restart:
+```bash
+npm run build
+pm2 restart sil-frontend
+```
+
+### Development Setup
+
+```bash
+npm install
+npm run dev
+```
 
 ## Getting started
 

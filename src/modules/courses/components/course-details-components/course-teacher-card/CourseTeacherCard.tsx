@@ -59,8 +59,9 @@ export const CourseTeacherCard = (props: Props) => {
       <Box sx={{ px: "20px", pt: "12px" }}>
         <Box>
           <Typography sx={{ color: "gray.50", fontSize: "12px" }}>
-            Lorem ipsum is placeholder text commonly used in the graphic, print,
-            and publishing industries for previewing layouts and visual mockups.
+            Experienced instructor with industry expertise, dedicated to helping
+            students achieve their learning goals through engaging and practical
+            lessons.
           </Typography>
         </Box>
       </Box>

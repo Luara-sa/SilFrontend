@@ -102,8 +102,9 @@ export const BeDelegateRegister = (props: Props) => {
             {t("sign up as a delegate")}
           </Typography>
           <Typography sx={{ color: "gray.light", fontSize: "16px" }}>
-            Lorem ipsum is placeholder text commonly used in the graphic, print,
-            and publishing industries for previewing layouts and visual mockups.
+            Register as a corporate delegate to manage training programs for
+            your team. Access group enrollment, progress tracking, and
+            specialized reporting features.
           </Typography>
         </Box>
         <Box

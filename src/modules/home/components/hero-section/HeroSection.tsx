@@ -55,7 +55,7 @@ export const HeroSection = () => {
               // textAlign: { xs: "center", lg: "start" },
             }}
           >
-            {t("inistitute")}
+            {t("institute")}
           </Typography>
           <Typography
             sx={{
@@ -110,7 +110,7 @@ export const HeroSection = () => {
           }}
         >
           <HeroCard
-            title={t("e-learninig")}
+            title={t("e-learning")}
             desc={t("e-learning content")}
             icon={
               <Image
@@ -130,7 +130,7 @@ export const HeroSection = () => {
           }}
         >
           <HeroCard
-            title={t("e-learninig")}
+            title={t("e-learning")}
             desc={t("e-learning content")}
             icon={
               <Image
