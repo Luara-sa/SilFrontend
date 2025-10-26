@@ -132,9 +132,6 @@ class CourseService {
       return res.data;
     }).catch((error) => {
       // For public access, don't redirect on 401, just return empty data
-      if (error.response?.status === 401) {
-        console.log('Public course access - no authentication required');
-      }
       return {
         status: false,
         message: error.response?.data?.message || error.message || 'Failed to fetch courses',
@@ -357,14 +354,7 @@ class CourseService {
       : 'student/courses';
     const url = `${endpoint}?${queryParams.toString()}`;
     
-    console.log('CourseService: Fetching URL:', url);
-    
     return _axios.get<any>(url).then((res) => {
-      console.log('CourseService: Raw axios response:', res);
-      console.log('CourseService: Response data:', res.data);
-      console.log('CourseService: Response data type:', typeof res.data);
-      console.log('CourseService: Response data keys:', Object.keys(res.data || {}));
-      
       // Handle different response formats
       const responseData = res.data;
       
@@ -410,11 +400,11 @@ class CourseService {
       }
       
       // If none of the above, return the data as-is (might fail validation later)
-      console.warn('CourseService: Unexpected response format', responseData);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('CourseService: Unexpected response format', responseData);
+      }
       return responseData;
     }).catch((error) => {
-      console.error('CourseService: Error caught:', error);
-      console.error('CourseService: Error response:', error.response);
       // Return error in expected format
       return {
         status: false,

@@ -43,7 +43,7 @@ export function middleware(request: NextRequest) {
   
   // Get token from cookies (Next.js 13+ middleware returns cookie object)
   const tokenCookie = request.cookies.get("token");
-  const cookieToken = tokenCookie?.value;
+  const cookieToken = tokenCookie ? (tokenCookie as any).value as string | undefined : undefined;
   
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => 

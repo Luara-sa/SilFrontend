@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogTitle,
@@ -19,7 +20,6 @@ import {
 import {
   Close as CloseIcon,
   CreditCard as CreditCardIcon,
-  Receipt as ReceiptIcon,
   Upload as UploadIcon,
   FileUpload as FileUploadIcon,
 } from "@mui/icons-material";
@@ -75,7 +75,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       id: "tamara",
       name: "Tamara",
       description: "Buy now, pay later with Tamara",
-      icon: <ReceiptIcon sx={{ fontSize: 40 }} />,
+      icon: (
+        <Image
+          src="/assets/images/tamara-en.svg"
+          alt="Tamara"
+          width={100}
+          height={100}
+          style={{
+            objectFit: "cover",
+            maxWidth: "100%",
+            height: "auto",
+          }}
+          priority
+        />
+      ),
       color: "#10b981",
     },
     {
@@ -289,7 +302,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         <Grid container spacing={2}>
           {paymentOptions.map((option) => (
-            <Grid item xs={12} sm={4} key={option.id}>
+            <Grid item xs={12} sm={4} key={option.id} sx={{ display: "flex" }}>
               <Card
                 onClick={() => !loading && setSelectedMethod(option.id)}
                 sx={{
@@ -310,10 +323,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         boxShadow: 3,
                       },
                   opacity: loading ? 0.6 : 1,
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <CardContent
-                  sx={{ textAlign: "center", py: 3, position: "relative" }}
+                  sx={{
+                    textAlign: "center",
+                    py: 3,
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: 1,
+                    minHeight: 220,
+                  }}
                 >
                   {loading && selectedMethod === option.id && (
                     <Box
@@ -333,11 +359,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <CircularProgress size={30} />
                     </Box>
                   )}
-                  <Box sx={{ color: option.color, mb: 2 }}>{option.icon}</Box>
+                  <Box
+                    sx={{
+                      color: option.color,
+                      mb: 2,
+                      height: 60,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {option.icon}
+                  </Box>
                   <Typography variant="h6" gutterBottom fontWeight="600">
                     {option.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ px: 1 }}
+                  >
                     {option.description}
                   </Typography>
                 </CardContent>

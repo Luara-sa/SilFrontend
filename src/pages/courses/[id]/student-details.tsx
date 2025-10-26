@@ -191,10 +191,9 @@ const StudentCourseDetailsPage = () => {
       if (response) {
         // Refetch enrollment status after successful enrollment
         refetchStatus();
-        console.log("Enrollment successful:", response.message);
       }
     } catch (error) {
-      console.error("Enrollment failed:", error);
+      // Error is handled by the hook and displayed in the UI
     }
   };
 

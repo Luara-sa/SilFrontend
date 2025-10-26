@@ -206,31 +206,22 @@ export const useStudentCourses = (): UseStudentCoursesReturn => {
           filters
         );
 
-        console.log("Hook - Full response:", response);
-        console.log("Hook - response.status:", response.status);
-        console.log("Hook - response.data:", response.data);
-        console.log("Hook - response.data?.content:", response.data?.content);
-        console.log(
-          "Hook - Has content?",
-          response.data?.content && Array.isArray(response.data.content)
-        );
-
         // Check if we have data.content regardless of status field
         if (response.data?.content && Array.isArray(response.data.content)) {
           const fetchedCourses = response.data.content;
-          console.log("Hook - Fetched courses count:", fetchedCourses.length);
           setStudentCourses(fetchedCourses);
 
           // Map to legacy Course structure for existing components
           try {
             const mappedCourses =
               mapStudentCoursesToCoursesLegacy(fetchedCourses);
-            console.log("Hook - Mapped courses count:", mappedCourses.length);
             setLegacyCourses(mappedCourses);
           } catch (mapError: any) {
-            console.error("Hook - Mapping error:", mapError);
             // Set empty array if mapping fails, but don't fail the whole fetch
             setLegacyCourses([]);
+            if (process.env.NODE_ENV === "development") {
+              console.error("Course mapping error:", mapError);
+            }
           }
 
           // Set pagination info from backend response
@@ -244,24 +235,12 @@ export const useStudentCourses = (): UseStudentCoursesReturn => {
             setPagination(paginationInfo);
           }
         } else {
-          console.error("Hook - Failed validation:", {
-            hasData: !!response.data,
-            hasContent: !!response.data?.content,
-            isArray: Array.isArray(response.data?.content),
-            status: response.status,
-          });
           setError(response.message || "Failed to fetch courses");
           setStudentCourses([]);
           setLegacyCourses([]);
           setPagination(null);
         }
       } catch (err: any) {
-        console.error("Hook - CATCH BLOCK TRIGGERED:", err);
-        console.error("Hook - Error details:", {
-          message: err.message,
-          stack: err.stack,
-          error: err,
-        });
         setError("Failed to fetch courses. Please check your connection.");
         setStudentCourses([]);
         setLegacyCourses([]);
