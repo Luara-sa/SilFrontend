@@ -70,7 +70,7 @@ const StudentCourseDetailsPage = () => {
     loading: statusLoading,
     error: statusError,
     refetch: refetchStatus,
-  } = useCourseEnrollmentStatus(id ? String(id) : null);
+  } = useCourseEnrollmentStatus(id ? String(id) : null, !isAuthenticated);
 
   // State for group selection
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);

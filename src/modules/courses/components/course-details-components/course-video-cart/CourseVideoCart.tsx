@@ -8,8 +8,10 @@ import useTranslation from "next-translate/useTranslation";
 import { useMe } from "hooks/useMe";
 import { courseStore } from "store/courseStore";
 import { _StudentRoleService } from "services/studentRole.service";
+import { useAuth } from "contexts/AuthContext";
 
 import { Box, Button } from "@mui/material";
+import LoginIcon from "@mui/icons-material/Login";
 
 import { BeDelegateAction } from "./be-delegate/BeDelegateAction";
 
@@ -45,12 +47,20 @@ interface Props {
 export const CourseVideoCart = (props: Props) => {
   const router = useRouter();
   const { isLogged } = useMe();
+  const { isAuthenticated } = useAuth();
   const { t } = useTranslation("course");
 
   const [course] = courseStore((state) => [state.course]);
   const [isAddtoCartLoading, setIsAddtoCartLoading] = useState(false);
 
   const handleAddToCart = () => {
+    // Check if user is authenticated, if not redirect to login
+    if (!isAuthenticated) {
+      const currentPath = router.asPath;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
     setIsAddtoCartLoading(true);
     _StudentRoleService
       .checkOrderAvailability(router.query.id as string)
@@ -189,29 +199,12 @@ export const CourseVideoCart = (props: Props) => {
                     variant="default"
                     fullWidth
                     onClick={() => handleAddToCart()}
-                    startIcon={<AddShoppingCartOutlinedIcon />}
-                    sx={{
-                      borderRadius: "10px",
-                      fontSize: [13, 13, 14, 13, 13],
-                      "&:hover": {
-                        backgroundColor: "primary.main",
-                      },
-                    }}
-                  >
-                    {t("add to cart")}
-                  </ButtonLoader>
-                )}
-                {props?.isPath && (
-                  <ButtonLoader
-                    loading={isAddtoCartLoading}
-                    variant="default"
-                    fullWidth
                     startIcon={
-                      <Image
-                        src="/assets/icons/course/subscriptions.png"
-                        width={24}
-                        height={24}
-                      />
+                      isAuthenticated ? (
+                        <AddShoppingCartOutlinedIcon />
+                      ) : (
+                        <LoginIcon />
+                      )
                     }
                     sx={{
                       borderRadius: "10px",
@@ -221,7 +214,36 @@ export const CourseVideoCart = (props: Props) => {
                       },
                     }}
                   >
-                    Enroll Path
+                    {isAuthenticated ? t("add to cart") : t("Login to Enroll")}
+                  </ButtonLoader>
+                )}
+                {props?.isPath && (
+                  <ButtonLoader
+                    loading={isAddtoCartLoading}
+                    variant="default"
+                    fullWidth
+                    onClick={() => handleAddToCart()}
+                    startIcon={
+                      isAuthenticated ? (
+                        <Image
+                          src="/assets/icons/course/subscriptions.png"
+                          width={24}
+                          height={24}
+                          alt="enroll"
+                        />
+                      ) : (
+                        <LoginIcon />
+                      )
+                    }
+                    sx={{
+                      borderRadius: "10px",
+                      fontSize: [13, 13, 14, 13, 13],
+                      "&:hover": {
+                        backgroundColor: "primary.main",
+                      },
+                    }}
+                  >
+                    {isAuthenticated ? t("Enroll Path") : t("Login to Enroll")}
                   </ButtonLoader>
                 )}
               </Box>

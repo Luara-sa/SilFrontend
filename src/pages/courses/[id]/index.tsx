@@ -32,14 +32,20 @@ const CourseById = (props: Props) => {
   ]);
 
   useEffect(() => {
-    !loading &&
-      _CourseService.getById(props.courseId).then((res) => {
+    // Fetch course data regardless of auth status
+    _CourseService
+      .getById(props.courseId)
+      .then((res) => {
         setCourse(res);
+      })
+      .catch((err) => {
+        console.error("Error fetching course:", err);
       });
+
     return () => {
       clearCourseStore();
     };
-  }, [me, loading]);
+  }, [props.courseId, setCourse, clearCourseStore]);
 
   return (
     <>

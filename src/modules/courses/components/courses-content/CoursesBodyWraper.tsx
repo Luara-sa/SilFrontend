@@ -5,6 +5,7 @@ import { Refresh as RefreshIcon } from "@mui/icons-material";
 
 import { useStudentCourses } from "hooks/useStudentCourses";
 import { useMyEnrolledCourses } from "hooks/useMyEnrolledCourses";
+import { useAuth } from "contexts/AuthContext";
 import { _AuthService } from "services/auth.service";
 import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
@@ -18,6 +19,8 @@ interface Props {}
 
 export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
   (props: Props, paramsRef: any) => {
+    const { isAuthenticated } = useAuth();
+
     const {
       studentCourses,
       legacyCourses,
@@ -28,8 +31,10 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
       resetCourses,
     } = useStudentCourses();
 
-    // Get enrolled courses to determine enrollment status
-    const { courses: enrolledCourses } = useMyEnrolledCourses();
+    // Get enrolled courses to determine enrollment status - only fetch for authenticated users
+    const { courses: enrolledCourses } = useMyEnrolledCourses({
+      skip: !isAuthenticated,
+    });
 
     const { filters, currentPage, setCurrentPage } = filterStore();
 

@@ -498,13 +498,16 @@ export const useCourseEnrollment = () => {
 };
 
 // Hook for checking course enrollment status
-export const useCourseEnrollmentStatus = (courseId: string | number | null) => {
+export const useCourseEnrollmentStatus = (
+  courseId: string | number | null,
+  skip: boolean = false
+) => {
   const [enrollmentStatus, setEnrollmentStatus] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEnrollmentStatus = useCallback(async () => {
-    if (!courseId) return;
+    if (!courseId || skip) return;
 
     setLoading(true);
     setError(null);
@@ -526,15 +529,19 @@ export const useCourseEnrollmentStatus = (courseId: string | number | null) => {
     } finally {
       setLoading(false);
     }
-  }, [courseId]);
+  }, [courseId, skip]);
 
   useEffect(() => {
-    fetchEnrollmentStatus();
-  }, [fetchEnrollmentStatus]);
+    if (!skip) {
+      fetchEnrollmentStatus();
+    }
+  }, [fetchEnrollmentStatus, skip]);
 
   const refetch = useCallback(() => {
-    fetchEnrollmentStatus();
-  }, [fetchEnrollmentStatus]);
+    if (!skip) {
+      fetchEnrollmentStatus();
+    }
+  }, [fetchEnrollmentStatus, skip]);
 
   return {
     enrollmentStatus,

@@ -29,6 +29,7 @@ import {
   QuestionAnswer,
 } from "services/placement-test.service";
 import { placementTestStore } from "store/placementTestStore";
+import { useAuth } from "contexts/AuthContext";
 
 import TimerIcon from "@mui/icons-material/Timer";
 import QuizIcon from "@mui/icons-material/Quiz";
@@ -38,6 +39,7 @@ import RestoreIcon from "@mui/icons-material/Restore";
 const PlacementTest = () => {
   const router = useRouter();
   const { id } = router.query;
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   // Enhanced state management with persistence
   const {
@@ -442,6 +444,14 @@ const PlacementTest = () => {
   }, [testStarted, testCompleted, hasUnsavedChanges, autoSaveProgress]);
 
   const handleStartTest = async () => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      // Redirect to login with return URL
+      const returnUrl = `/placement-test/${id}`;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
     // Prevent multiple simultaneous calls
     if (loading || submitting) return;
 

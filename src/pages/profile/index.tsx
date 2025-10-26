@@ -3,31 +3,29 @@ import React, { useEffect } from "react";
 import { Box, useTheme } from "@mui/material";
 
 import { useRender } from "hooks/useRender";
+import { useAuthGuard } from "hooks/useProtectedRoute";
 
 import { ProfileIndex } from "modules/profile/ProfileIndex";
-import { useMe } from "hooks/useMe";
-import { useRouter } from "next/router";
 import { profileStore } from "store/profileStore";
 
 const Profile = () => {
   const theme = useTheme();
-  const router = useRouter();
+
+  // Protect this route - require authentication
+  const { isLoading } = useAuthGuard();
 
   const [clearData] = profileStore((state) => [state.clearData]);
 
   const { render } = useRender();
 
-  const { isThereIsToken } = useMe();
-
   useEffect(() => {
-    if (!isThereIsToken) {
-      router.push("/");
-    }
     return () => clearData();
-  }, []);
+  }, [clearData]);
 
-  // To prevent Hydration error
-  if (!render) return null;
+  // Show loading state while checking auth or preventing hydration error
+  if (isLoading || !render) {
+    return null;
+  }
 
   return (
     <Box

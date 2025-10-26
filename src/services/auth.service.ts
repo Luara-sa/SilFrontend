@@ -33,11 +33,11 @@ class AuthService {
   }
 
   login(data: any): Promise<AxiosResponse<RootObj<any>>> {
-    return _axios.post<any>(`student/login`, data).then((res: any) => {
+    return _axios.post<any>(`student/login`, data).then(async (res: any) => {
   
       // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
       if (res.data.data && res.data.data.token) {
-        this.doLogin(res.data.data.token);
+        await this.doLogin(res.data.data.token);
       }
       return res;
     });
@@ -45,11 +45,11 @@ class AuthService {
 
 
   loginCompany(data: any): Promise<AxiosResponse<RootObj<any>>> {
-    return _axios.post<any>(`company/login`, data).then((res: any) => {
+    return _axios.post<any>(`company/login`, data).then(async (res: any) => {
   
       // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
       if (res.data.data && res.data.data.token) {
-        this.doLogin(res.data.data.token);
+        await this.doLogin(res.data.data.token);
       }
       return res;
     });
@@ -143,10 +143,10 @@ class AuthService {
     access_token: string;
   }): Promise<AxiosResponse<RootObj<ISocialLoginRes>>> {
     // Use new student/social-login endpoint with correct parameter names
-    return _axios.post<any>(`student/social-login`, data).then((res) => {
+    return _axios.post<any>(`student/social-login`, data).then(async (res) => {
       // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
       if (res.data.data && res.data.data.token) {
-        this.doLogin(res.data.data.token);
+        await this.doLogin(res.data.data.token);
       }
       return res;
     });
@@ -241,9 +241,13 @@ class AuthService {
     // Redirect to login page if we're not already there
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
-      if (!currentPath.startsWith('/auth/login') && !currentPath.startsWith('/auth/')) {
-        window.location.href = '/auth/login';
+      // Only redirect if we're not already on an auth page
+      if (!currentPath.startsWith('/auth/')) {
+        // Store current path for redirect after login
+        const returnUrl = currentPath + window.location.search;
+        window.location.href = `/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`;
       }
+      // If already on auth page, just stay there (don't redirect)
     }
   }
 
@@ -255,7 +259,7 @@ class AuthService {
     }
   }
 
-  doLogin(token: any, user?: any) {
+  async doLogin(token: any, user?: any) {
     // Validate token before storing
     if (!JwtUtils.isValidTokenFormat(token)) {
       throw new Error('Invalid token format');
@@ -265,7 +269,7 @@ class AuthService {
       throw new Error('Token is already expired');
     }
     
-    this.storeTokens(token);
+    await this.storeTokens(token);
     console.log('Token stored in AuthService:', !!this.getJwtToken());
   }
 
@@ -279,17 +283,20 @@ class AuthService {
   /**
    * Store token securely using both localStorage and httpOnly cookies when possible
    */
-  private storeTokens(token: any) {
+  private async storeTokens(token: any) {
     const tokenKey = NEXT_APP_TOKEN_KEY ?? "token";
     
     // Store in localStorage for client-side access
     localStorage.setItem(tokenKey, token);
     
-    // Also try to store in httpOnly cookie via API call for enhanced security
-    this.storeTokenInCookie(token).catch(error => {
-      console.warn('Failed to store token in httpOnly cookie:', error);
+    // Store in httpOnly cookie via API call - WAIT for it to complete
+    try {
+      await this.storeTokenInCookie(token);
+      console.log('Token stored in cookie successfully');
+    } catch (error) {
+      console.error('Failed to store token in httpOnly cookie:', error);
       // Continue execution as localStorage storage is still available
-    });
+    }
   }
 
   /**

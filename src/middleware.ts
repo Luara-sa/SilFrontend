@@ -13,12 +13,15 @@ const publicRoutes = [
   '/privacy-policy',
   '/terms-of-service',
   '/courses',
+  '/placement-tests',
+  '/placement-test',
+  '/company',
+  '/path',
 ];
 
 const protectedRoutes = [
   '/profile',
   '/checkout',
-  '/placement-test',
   '/test',
 ];
 
@@ -38,8 +41,9 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host') || 'localhost:3000';
   const baseUrl = `${protocol}//${host}`;
   
-  // Get token from cookies (Next.js 12 middleware returns string | undefined)
-  const cookieToken = request.cookies.get("token");
+  // Get token from cookies (Next.js 13+ middleware returns cookie object)
+  const tokenCookie = request.cookies.get("token");
+  const cookieToken = tokenCookie?.value;
   
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route => 
@@ -128,43 +132,18 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Handle protected routes  
+  // Handle protected routes - but allow client-side to handle auth
+  // Middleware just blocks obvious unauthorized access
   if (isProtectedRouteActual) {
-    // TEMPORARY DEV BYPASS: In development, be more permissive
-    if (process.env.NODE_ENV === 'development') {
-      return NextResponse.next();
-    }
-    
-    if (!hasValidToken) {
-      // Store only the pathname (not full URL) to redirect back after login
-      const returnPath = pathname + (request.nextUrl.search || '');
-      const loginUrl = new URL('/auth/login', baseUrl);
-      loginUrl.searchParams.set('returnUrl', returnPath);
-      
-      return NextResponse.redirect(loginUrl);
-    }
-    
-    // Token is valid, allow access
+    // Always allow access, let client-side hooks handle auth
+    // This prevents redirect loops when cookie isn't available yet
     return NextResponse.next();
   }
 
   // Handle auth routes - redirect authenticated users away from auth pages
   if (isAuthRouteActual) {
     if (hasValidToken) {
-      // Check if there's a return URL
-      const returnUrl = request.nextUrl.searchParams.get('returnUrl');
-      if (returnUrl) {
-        try {
-          // returnUrl is now just a path, so validate it's a safe internal path
-          if (returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
-            return NextResponse.redirect(new URL(returnUrl, baseUrl));
-          }
-        } catch (error) {
-          console.error('Invalid return URL:', error);
-        }
-      }
-      
-      // Default redirect to home
+      // Always redirect to home, let client-side handle returnUrl
       return NextResponse.redirect(new URL('/', baseUrl));
     }
     

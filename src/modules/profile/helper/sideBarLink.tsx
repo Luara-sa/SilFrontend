@@ -36,11 +36,11 @@ export const studentSideBar = [
   //   index: "myCertificates",
   //   icon: <img src="/assets/icons/Certificate.svg" />,
   // },
-  {
-    label: { en: "My Orders", ar: "طلباتي" },
-    index: "myOrders",
-    icon: <img src="/assets/icons/profile/my-orders.svg" />,
-  },
+  // {
+  //   label: { en: "My Orders", ar: "طلباتي" },
+  //   index: "myOrders",
+  //   icon: <img src="/assets/icons/profile/my-orders.svg" />,
+  // },
 ];
 
 export const companySideBar = [

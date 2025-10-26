@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { _AuthService } from 'services/auth.service';
 import { useAuth } from 'contexts/AuthContext';
@@ -26,27 +26,29 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}): UsePr
   } = options;
 
   const router = useRouter();
-  const { isAuthenticated, isLoading, user, checkAuthStatus } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [hasRequiredRole, setHasRequiredRole] = useState<boolean>(false);
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     // Don't check auth on auth pages unless specifically required
     const isAuthPage = router.pathname.startsWith('/auth/');
-    
-    console.log("useProtectedRoute effect - isAuthPage:", isAuthPage, "requireAuth:", requireAuth, "isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
     
     if (!requireAuth) {
       setIsAuthorized(true);
       setHasRequiredRole(true);
       
       // For guest-only pages (like login), redirect authenticated users away
-      if (isAuthenticated && isAuthPage && !isLoading) {
-        console.log("Guest-only page: redirecting authenticated user away from auth page");
+      if (isAuthenticated && isAuthPage && !isLoading && !hasRedirectedRef.current) {
+        hasRedirectedRef.current = true;
         const returnUrl = router.query.returnUrl as string;
-        const redirectTarget = returnUrl && returnUrl !== '/' && returnUrl !== router.pathname ? returnUrl : '/';
-        console.log("Redirecting to:", redirectTarget);
-        router.push(redirectTarget);
+        // Only redirect to returnUrl if it's not an auth page
+        const isReturnUrlAuthPage = returnUrl?.startsWith('/auth/');
+        const redirectTarget = returnUrl && !isReturnUrlAuthPage ? returnUrl : '/';
+        
+        // Use replace instead of push to avoid adding to history
+        router.replace(redirectTarget);
       }
       return;
     }
@@ -57,21 +59,25 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}): UsePr
 
     // Check authentication status
     if (!isAuthenticated) {
-      console.warn('User not authenticated, redirecting...');
       setIsAuthorized(false);
       setHasRequiredRole(false);
       
-      if (onUnauthorized) {
-        onUnauthorized();
-      }
-      
-      if (!isAuthPage) {
+      if (!isAuthPage && !hasRedirectedRef.current) {
+        hasRedirectedRef.current = true;
+        
+        if (onUnauthorized) {
+          onUnauthorized();
+        }
+        
         // Store the current path to redirect back after login
         const returnUrl = router.asPath;
-        router.push(`${redirectTo}?returnUrl=${returnUrl}`);
+        router.replace(`${redirectTo}?returnUrl=${encodeURIComponent(returnUrl)}`);
       }
       return;
     }
+
+    // Reset redirect flag when authenticated
+    hasRedirectedRef.current = false;
 
     // Check role-based authorization
     let roleAuthorized = true;
@@ -80,7 +86,6 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}): UsePr
       roleAuthorized = requiredRoles.some(role => userRoles.includes(role));
       
       if (!roleAuthorized) {
-        console.warn('User does not have required roles:', requiredRoles);
         setHasRequiredRole(false);
         
         if (onUnauthorized) {
@@ -88,7 +93,10 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}): UsePr
         }
         
         // Redirect to unauthorized page or home
-        router.push('/unauthorized');
+        if (!hasRedirectedRef.current) {
+          hasRedirectedRef.current = true;
+          router.replace('/unauthorized');
+        }
         return;
       }
     }
@@ -96,7 +104,7 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}): UsePr
     setIsAuthorized(true);
     setHasRequiredRole(roleAuthorized);
 
-  }, [isAuthenticated, isLoading, user, router, redirectTo, requireAuth, requiredRoles, onUnauthorized]);
+  }, [isAuthenticated, isLoading, user, requireAuth, requiredRoles.length]);
 
   return {
     isLoading,

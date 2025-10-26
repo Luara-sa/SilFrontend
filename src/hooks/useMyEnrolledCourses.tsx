@@ -5,6 +5,7 @@ import { StudentCourse, StudentCoursesResponse } from "../interface/common";
 interface UseMyEnrolledCoursesProps {
   page?: number;
   perPage?: number;
+  skip?: boolean; // Skip fetching if true (for unauthenticated users)
 }
 
 interface UseMyEnrolledCoursesReturn {
@@ -25,6 +26,7 @@ interface UseMyEnrolledCoursesReturn {
 export const useMyEnrolledCourses = ({
   page = 1,
   perPage = 15,
+  skip = false,
 }: UseMyEnrolledCoursesProps = {}): UseMyEnrolledCoursesReturn => {
   const [courses, setCourses] = useState<StudentCourse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,11 @@ export const useMyEnrolledCourses = ({
   });
 
   const fetchMyEnrolledCourses = async (pageNum: number = currentPage) => {
+    // Skip fetching if skip flag is true (user not authenticated)
+    if (skip) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -88,18 +95,22 @@ export const useMyEnrolledCourses = ({
   };
 
   const refetch = () => {
-    fetchMyEnrolledCourses(currentPage);
+    if (!skip) {
+      fetchMyEnrolledCourses(currentPage);
+    }
   };
 
   const goToPage = (page: number) => {
-    if (page >= 1 && page <= pagination.totalPages) {
+    if (!skip && page >= 1 && page <= pagination.totalPages) {
       fetchMyEnrolledCourses(page);
     }
   };
 
   useEffect(() => {
-    fetchMyEnrolledCourses(page);
-  }, [page, perPage]);
+    if (!skip) {
+      fetchMyEnrolledCourses(page);
+    }
+  }, [page, perPage, skip]);
 
   return {
     courses,

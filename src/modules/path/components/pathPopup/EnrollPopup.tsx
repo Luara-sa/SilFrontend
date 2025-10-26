@@ -11,12 +11,14 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContactSupportOutlinedIcon from "@mui/icons-material/ContactSupportOutlined";
 import UpdateIcon from "@mui/icons-material/Update";
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
+import LoginIcon from "@mui/icons-material/Login";
 import useTranslation from "next-translate/useTranslation";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { _PathService } from "services/path.service";
 import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
 import { pathStore } from "store/pathStore";
+import { useAuth } from "contexts/AuthContext";
 
 interface Props {
   firstCourseId: number;
@@ -25,6 +27,7 @@ interface Props {
 export const EnrollPath = (props: Props) => {
   const { t } = useTranslation("course");
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [activeStep, setActiveStep] = useState<number>(1);
   const [open, setOpen] = useState<boolean>(false);
   const [setPath] = pathStore((state) => [state.setPath]);
@@ -56,6 +59,12 @@ export const EnrollPath = (props: Props) => {
     setOpen(false);
   };
   const handleOpen = () => {
+    // Check if user is authenticated, if not redirect to login
+    if (!isAuthenticated) {
+      const currentPath = router.asPath;
+      router.push(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
     setOpen(true);
   };
   const handleClose = () => {
@@ -68,7 +77,13 @@ export const EnrollPath = (props: Props) => {
         onClick={handleOpen}
         variant="default"
         fullWidth
-        startIcon={<SubscriptionsIcon sx={{ color: "primary.main" }} />}
+        startIcon={
+          isAuthenticated ? (
+            <SubscriptionsIcon sx={{ color: "primary.main" }} />
+          ) : (
+            <LoginIcon />
+          )
+        }
         sx={{
           borderRadius: "10px",
           fontSize: [13, 13, 14, 13, 13],
@@ -77,7 +92,7 @@ export const EnrollPath = (props: Props) => {
           },
         }}
       >
-        {t("enroll path")}
+        {isAuthenticated ? t("enroll path") : t("Login to Enroll")}
       </Button>
       <Dialog
         sx={{

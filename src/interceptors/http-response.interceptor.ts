@@ -55,7 +55,8 @@ export const HttpResponseInterceptor = ({
         'student/categories',
         'company/courses',
         'getCourses',
-        'getCategories'
+        'getCategories',
+        '/details' // Course details endpoints (e.g., student/courses/{id}/details)
       ];
       
       // Check if this is a public endpoint
