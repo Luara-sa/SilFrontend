@@ -46,7 +46,7 @@ export const CourseCard = (props: Props) => {
     currency,
   } = props;
 
-  const { t } = useTranslation("home");
+  const { t } = useTranslation("course");
   const [value, setValue] = React.useState<number | null>(rate || 0);
 
   const hasPricingTag = props.discount > 0 || props.price === 0;

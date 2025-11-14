@@ -9,6 +9,7 @@ import { useAuth } from "contexts/AuthContext";
 import { _AuthService } from "services/auth.service";
 import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
+import { useCourseMappings } from "hooks/useCourseMappings";
 
 import { CourseCard } from "components/shared";
 import { CourseCardLoader } from "components/shared/loader/LoaderCard/CourseCardLoader";
@@ -20,6 +21,7 @@ interface Props {}
 export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
   (props: Props, paramsRef: any) => {
     const { isAuthenticated } = useAuth();
+    const { getCourseMode, getCourseLevel } = useCourseMappings();
 
     const {
       studentCourses,
@@ -114,6 +116,7 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
             >
               {studentCourses.map((course: any) => {
                 const isEnrolled = enrolledCourseIds.has(course.id);
+                const levelName = course.levels?.[0]?.name || "";
                 return (
                   <CourseCard
                     id={course.id}
@@ -121,10 +124,10 @@ export const CoursesBodyWraper = forwardRef<HTMLDivElement, any>(
                     name={course.name}
                     hours={course.duration}
                     image={course.thumbnail}
-                    level={course.levels?.[0]?.name || ""}
+                    level={levelName ? getCourseLevel(levelName) : ""}
                     price={parseFloat(course.course_price?.price || "0")}
                     rate={course.reviews?.average_rating || 0}
-                    type={course.mode}
+                    type={getCourseMode(course.mode)}
                     lessonCount={0}
                     discount={
                       course.course_price?.discounted_price

@@ -43,11 +43,17 @@ export const SmallCourseInfoSlider = ({
 
   return (
     <SwiperContaier
-      // slidesPerView={3}
-      style={{ position: "initial", backgroundColor: "#FFFEFA" }}
+      style={{
+        position: "initial",
+        backgroundColor: "#FFFEFA",
+        padding: "4px 0",
+        display: "flex",
+        alignItems: "center",
+      }}
       cssMode={true}
-      spaceBetween={isFourInfoDisplyed ? 10 : 20}
+      spaceBetween={isFourInfoDisplyed ? 12 : 16}
       freeMode={true}
+      slidesPerView="auto"
       pagination={{
         clickable: true,
       }}
@@ -71,8 +77,17 @@ export const SmallCourseInfoSlider = ({
           />
         </>
       )}
+
       {hours && (
-        <SwiperSlide>
+        <SwiperSlide
+          style={{
+            width: "auto",
+            marginRight: "8px",
+            display: "flex",
+            alignItems: "center",
+            height: "auto",
+          }}
+        >
           <SmallCourseInfo
             title={`${hours} hours`}
             icon={<AccessTimeIcon sx={{ color: "#1E5B63", width: "13px" }} />}
@@ -80,17 +95,33 @@ export const SmallCourseInfoSlider = ({
         </SwiperSlide>
       )}
 
-      <SwiperSlide>
-        {type && (
+      {type && (
+        <SwiperSlide
+          style={{
+            width: "auto",
+            marginRight: "8px",
+            display: "flex",
+            alignItems: "center",
+            height: "auto",
+          }}
+        >
           <SmallCourseInfo
             title={type}
             icon={<Man2OutlinedIcon sx={{ color: "#1E5B63", width: "13px" }} />}
           />
-        )}
-      </SwiperSlide>
+        </SwiperSlide>
+      )}
 
       {lessonCount && (
-        <SwiperSlide>
+        <SwiperSlide
+          style={{
+            width: "auto",
+            marginRight: "8px",
+            display: "flex",
+            alignItems: "center",
+            height: "auto",
+          }}
+        >
           <SmallCourseInfo
             title={`${lessonCount} Lessons`}
             icon={
@@ -100,14 +131,21 @@ export const SmallCourseInfoSlider = ({
         </SwiperSlide>
       )}
 
-      <SwiperSlide>
-        {level && (
+      {level && (
+        <SwiperSlide
+          style={{
+            width: "auto",
+            display: "flex",
+            alignItems: "center",
+            height: "auto",
+          }}
+        >
           <SmallCourseInfo
             title={level}
             icon={<LevelIcon customsize="small" />}
           />
-        )}
-      </SwiperSlide>
+        </SwiperSlide>
+      )}
     </SwiperContaier>
   );
 };

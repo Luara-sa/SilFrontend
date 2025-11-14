@@ -13,10 +13,12 @@ export const SmallCourseInfo: FC<SmallInfoProps> = (props) => {
       sx={{
         display: "flex",
         alignItems: "center",
-        columnGap: { xs: "4px", sm: "2px" },
-        flexDirection: { xs: "column", sm: "row" },
+        columnGap: { xs: "4px", sm: "6px" },
+        flexDirection: "row",
         justifyContent: "center",
-        minWidth: { xs: "60px", sm: "auto" },
+        minWidth: { xs: "auto", sm: "auto" },
+        height: "24px",
+        padding: "2px 0",
       }}
     >
       {props.icon}
@@ -33,7 +35,7 @@ export const SmallCourseInfo: FC<SmallInfoProps> = (props) => {
               : { xs: "12px", sm: "13px", md: "14px" },
           color: "gray.50",
           textAlign: "center",
-          lineHeight: 1.2,
+          lineHeight: 1.4,
           whiteSpace: "nowrap",
         }}
       >

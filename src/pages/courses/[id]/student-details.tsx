@@ -46,12 +46,14 @@ import { CourseGroup, CourseLevel, TargetAudience } from "interface/common";
 import { Seo, PaymentModal } from "components/shared";
 import useTranslation from "next-translate/useTranslation";
 import { useAuth } from "contexts/AuthContext";
+import { useCourseMappings } from "hooks/useCourseMappings";
 
 const StudentCourseDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { t } = useTranslation("course");
   const { isAuthenticated } = useAuth();
+  const { getCourseMode, getCourseLevelById } = useCourseMappings();
 
   const { courseData, loading, error, refetch } = useDetailedStudentCourse(
     id ? String(id) : null
@@ -251,10 +253,7 @@ const StudentCourseDetailsPage = () => {
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
                   <Chip
                     icon={getModeIcon(courseData.mode)}
-                    label={
-                      courseData.mode.charAt(0).toUpperCase() +
-                      courseData.mode.slice(1)
-                    }
+                    label={getCourseMode(courseData.mode)}
                     color={getModeColor(courseData.mode) as any}
                     variant="outlined"
                   />
@@ -837,7 +836,7 @@ const StudentCourseDetailsPage = () => {
                     {courseData.levels.map((level: CourseLevel) => (
                       <Chip
                         key={level.id}
-                        label={level.name}
+                        label={getCourseLevelById(level.id, level.name)}
                         variant="outlined"
                         color="primary"
                       />

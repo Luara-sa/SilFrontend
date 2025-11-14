@@ -7,6 +7,25 @@ export const HttpRequestInterceptor = () => {
       // Do something before request is sent
       const token = _AuthService.getJwtToken();
       
+      // Get current locale from the URL or localStorage
+      let locale = 'en'; // default
+      if (typeof window !== 'undefined') {
+        // Try to get locale from URL path (e.g., /ar/courses or /en/courses)
+        const pathParts = window.location.pathname.split('/');
+        const pathLocale = pathParts[1];
+        if (pathLocale === 'ar' || pathLocale === 'en') {
+          locale = pathLocale;
+        } else {
+          // Fallback to localStorage or default
+          locale = localStorage.getItem('locale') || 'en';
+        }
+      }
+      
+      // Add localization header to all requests
+      if (request.headers) {
+        request.headers['X-localization'] = locale;
+      }
+      
       // List of endpoints that don't require authentication
       const publicEndpoints = [
         'student/courses',

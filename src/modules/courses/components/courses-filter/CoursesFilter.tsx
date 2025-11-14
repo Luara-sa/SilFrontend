@@ -27,6 +27,7 @@ import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
 import { useStudentCategories } from "hooks/useStudentCategories";
 import { useUserAccess } from "hooks/useUserAccess";
+import { useCourseMappings } from "hooks/useCourseMappings";
 
 interface CoursesFilterProps {
   open: boolean;
@@ -41,6 +42,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
 }) => {
   const { filters, setFilters, resetFilters } = filterStore();
   const { canAccess, isLoading } = useUserAccess();
+  const { getCourseMode } = useCourseMappings();
   const {
     studentCategories = [],
     fetchStudentCategories,
@@ -251,9 +253,9 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
               label="Course Mode"
             >
               <MenuItem value="">All Modes</MenuItem>
-              <MenuItem value="online">Online</MenuItem>
-              <MenuItem value="location">In-Person</MenuItem>
-              <MenuItem value="hybrid">Hybrid</MenuItem>
+              <MenuItem value="online">{getCourseMode('online')}</MenuItem>
+              <MenuItem value="location">{getCourseMode('location')}</MenuItem>
+              <MenuItem value="hybrid">{getCourseMode('hybrid')}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>

@@ -68,5 +68,16 @@
   "total": "الإجمالي",
   "remining amount": "المبلغ المتبقي",
   "Login to Enroll": "سجل الدخول للتسجيل",
-  "Enroll Path": "تسجيل المسار"
+  "Enroll Path": "تسجيل المسار",
+  "mode.hybrid": "هجين",
+  "mode.online": "أونلاين",
+  "mode.location": "حضوري",
+  "level.beginner": "مبتدئ",
+  "level.elementary": "أساسي",
+  "level.intermediate": "متوسط",
+  "level.upper intermediate": "فوق المتوسط",
+  "level.advanced": "متقدم",
+  "level.expert": "خبير",
+  "View Course": "عرض الدورة",
+  "Enroll": "تسجيل"
 }

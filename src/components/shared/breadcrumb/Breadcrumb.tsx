@@ -3,8 +3,11 @@ import React from "react";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "next/link";
+import useTranslation from "next-translate/useTranslation";
 
 export const Breadcrumb = () => {
+  const { t } = useTranslation("footer");
+
   return (
     <Box
       sx={{
@@ -23,7 +26,7 @@ export const Breadcrumb = () => {
               color: "primary.main",
             }}
           >
-            Courses
+            {t("courses")}
           </Typography>
         </Box>
         <Box sx={{ mt: "5px" }}>
@@ -43,7 +46,7 @@ export const Breadcrumb = () => {
                   },
                 }}
               >
-                Home
+                {t("home")}
               </Typography>
             </Link>
 
@@ -55,7 +58,7 @@ export const Breadcrumb = () => {
                 fontWeight: "700",
               }}
             >
-              Courses
+              {t("courses")}
             </Typography>
           </Breadcrumbs>
         </Box>

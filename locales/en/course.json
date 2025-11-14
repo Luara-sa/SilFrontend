@@ -68,5 +68,16 @@
   "total": "Total",
   "remining amount": "Remining Amount",
   "Login to Enroll": "Login to Enroll",
-  "Enroll Path": "Enroll Path"
+  "Enroll Path": "Enroll Path",
+  "mode.hybrid": "Hybrid",
+  "mode.online": "Online",
+  "mode.location": "In-Person",
+  "level.beginner": "Beginner",
+  "level.elementary": "Elementary",
+  "level.intermediate": "Intermediate",
+  "level.upper intermediate": "Upper Intermediate",
+  "level.advanced": "Advanced",
+  "level.expert": "Expert",
+  "View Course": "View Course",
+  "Enroll": "Enroll"
 }
