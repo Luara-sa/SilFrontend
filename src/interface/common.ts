@@ -280,6 +280,8 @@ export interface User {
   prefix_phone_number?: string;
   profile_img?: string;
   enrollments_count?: number;
+  is_verify?: number | boolean;
+  guard?: string;
 }
 
 export interface CreateStudentOrder {

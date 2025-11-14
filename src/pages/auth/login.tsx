@@ -239,7 +239,37 @@ const LoginPage: NextPage = () => {
             throw new Error(responseData.message || "Social login failed");
           }
 
-          const { profile, token } = responseData.data;
+          const { profile, token, verify_email_token } = responseData.data;
+
+          // Check if user needs email verification
+          if (profile.is_verify === 0 || profile.is_verify === false) {
+            console.log(
+              "User email not verified after social login, redirecting to verification page"
+            );
+
+            const userData = {
+              user: profile,
+              token: token,
+              role: ["student"],
+              info_system: {
+                english_level_enum: [],
+                document_type_enum: {},
+                vat_value: { vat: 0 },
+              },
+            };
+
+            login(userData.token, userData);
+
+            if (verify_email_token) {
+              localStorage.setItem("verify_email_token", verify_email_token);
+            }
+            localStorage.setItem("verification_email", profile.email);
+
+            router.push(
+              `/auth/verfiy-account/${encodeURIComponent(profile.email)}`
+            );
+            return;
+          }
 
           const userData = {
             user: profile,

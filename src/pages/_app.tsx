@@ -20,6 +20,7 @@ import { meStore } from "store/meStore";
 import { _AuthService } from "services/auth.service";
 import { InterceptorProvider } from "interceptors1/InterceptorProvider";
 import { AuthProvider } from "contexts/AuthContext";
+import { useVerificationCheck } from "hooks/useVerificationCheck";
 
 import { Layout } from "components/layout";
 
@@ -50,6 +51,14 @@ type AppProps = {
 } & BaseAppProps & {
     Component: NextPage;
   };
+
+// Component wrapper to check verification status
+const VerificationWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Check verification status and redirect if needed
+  useVerificationCheck();
+  
+  return <>{children}</>;
+};
 
 const App: NextComponentType<NextPageContext, {}, AppProps> = ({
   Component,
@@ -111,20 +120,22 @@ const App: NextComponentType<NextPageContext, {}, AppProps> = ({
               preventDuplicate
             >
               <AuthProvider>
-                <InterceptorProvider>
-                  <GoogleOAuthProvider clientId="801196929391-r8do46k5fqrn2eifrd1333hgphkh2n0b.apps.googleusercontent.com">
-                    <>
-                      {/* <LocalizationProvider dateAdapter={AdapterDateFns}> */}
-                      <LayoutFinal>
-                        <Component {...pageProps} />
-                      </LayoutFinal>
-                      {/* </LocalizationProvider> */}
-                      {/* {process.env.NODE_ENV !== "production" && (
-                      <ReactQueryDevtools />
-                    )} */}
-                    </>
-                  </GoogleOAuthProvider>
-                </InterceptorProvider>
+                <VerificationWrapper>
+                  <InterceptorProvider>
+                    <GoogleOAuthProvider clientId="801196929391-r8do46k5fqrn2eifrd1333hgphkh2n0b.apps.googleusercontent.com">
+                      <>
+                        {/* <LocalizationProvider dateAdapter={AdapterDateFns}> */}
+                        <LayoutFinal>
+                          <Component {...pageProps} />
+                        </LayoutFinal>
+                        {/* </LocalizationProvider> */}
+                        {/* {process.env.NODE_ENV !== "production" && (
+                        <ReactQueryDevtools />
+                      )} */}
+                      </>
+                    </GoogleOAuthProvider>
+                  </InterceptorProvider>
+                </VerificationWrapper>
               </AuthProvider>
             </SnackbarProvider>
           </QueryClientProvider>

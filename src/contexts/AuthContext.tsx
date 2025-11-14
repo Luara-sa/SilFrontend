@@ -21,6 +21,8 @@ interface AuthContextType {
   refreshAuthStatus: () => void;
   tokenExpiration: Date | null;
   willExpireSoon: boolean;
+  isVerified: boolean;
+  isStudent: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -308,6 +310,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, [isAuthenticated, checkAuthStatus]);
 
+  // Check if user is verified (only for students)
+  const isStudent = user?.guard === 'student' || user?.user_type === 'student';
+  const isVerified = user?.is_verify === 1 || user?.is_verify === true;
+
   const contextValue: AuthContextType = {
     isAuthenticated,
     isLoading,
@@ -318,6 +324,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshAuthStatus,
     tokenExpiration,
     willExpireSoon,
+    isVerified,
+    isStudent,
   };
 
   return (

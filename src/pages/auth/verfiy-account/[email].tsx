@@ -77,23 +77,36 @@ const VerfiyAccount = () => {
       .then((res) => {
         console.log("Email verification response:", res);
 
+        // Update user data in store and localStorage to mark as verified
+        const currentMe = meStore.getState().me;
+        if (currentMe?.user) {
+          const updatedUser = {
+            ...currentMe.user,
+            is_verify: 1, // Mark as verified
+          };
+          const updatedMeData = {
+            ...currentMe,
+            user: updatedUser,
+          };
+          meStore.getState().setMe(updatedMeData);
+          localStorage.setItem("user_data", JSON.stringify(updatedMeData));
+        }
+
         // Clear verification data from localStorage
         localStorage.removeItem("verify_email_token");
         localStorage.removeItem("verification_email");
 
-        // eventEmitter.emit("enqueueSnackbar", {
-        //   message: "Email verified successfully!",
-        //   snack: {
-        //     variant: "success",
-        //     autoHideDuration: 3000,
-        //     preventDuplicate: true,
-        //   },
-        // });
+        eventEmitter.emit("enqueueSnackbar", {
+          message: "Email verified successfully!",
+          variant: "success",
+          autoHideDuration: 3000,
+          preventDuplicate: true,
+        });
 
         // Check if user is already authenticated (has valid token)
         if (_AuthService.isLoggedIn()) {
-          console.log("User is authenticated, redirecting to main page");
-          router.push("/");
+          console.log("User is authenticated, redirecting to courses page");
+          router.push("/courses");
         } else {
           console.log("User not authenticated, redirecting to login");
           router.push("/auth/login");
@@ -391,7 +404,7 @@ const VerfiyAccount = () => {
                   </Box>
                 )}
 
-                {resendCode === false && (
+                {/* {resendCode === false && (
                   <Box
                     sx={{
                       mt: "48px",
@@ -422,7 +435,7 @@ const VerfiyAccount = () => {
                       </Typography>
                     </Button>
                   </Box>
-                )}
+                )} */}
               </Box>
             </Box>
           </Box>
