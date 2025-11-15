@@ -36,6 +36,7 @@ import {
   Receipt,
   CloudDownload,
   Warning,
+  SelectAllSharp,
 } from "@mui/icons-material";
 import {
   useDetailedStudentCourse,
@@ -43,14 +44,14 @@ import {
   useCourseEnrollmentStatus,
 } from "hooks/useStudentCourses";
 import { CourseGroup, CourseLevel, TargetAudience } from "interface/common";
-import { Seo, PaymentModal } from "components/shared";
+import { Seo, PaymentModal, GroupSelectionModal } from "components/shared";
 import useTranslation from "next-translate/useTranslation";
 import { useAuth } from "contexts/AuthContext";
 import { useCourseMappings } from "hooks/useCourseMappings";
 
 const StudentCourseDetailsPage = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, payment_success, payment_failed } = router.query;
   const { t } = useTranslation("course");
   const { isAuthenticated } = useAuth();
   const {
@@ -59,6 +60,10 @@ const StudentCourseDetailsPage = () => {
     getLearningStructure,
     getDeliveryMode,
   } = useCourseMappings();
+
+  // State for payment messages
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [showPaymentFailed, setShowPaymentFailed] = useState(false);
 
   const { courseData, loading, error, refetch } = useDetailedStudentCourse(
     id ? String(id) : null
@@ -82,14 +87,47 @@ const StudentCourseDetailsPage = () => {
   // State for group selection
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
-  // State for payment modal
+  // State for modals
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
 
   // Reset enrollment state when course changes
   useEffect(() => {
     resetEnrollment();
     setSelectedGroupId(null);
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle payment success from redirect
+  useEffect(() => {
+    if (payment_success === "true") {
+      setShowPaymentSuccess(true);
+      // Refetch enrollment status after successful payment
+      refetchStatus();
+      // Remove the query parameter from URL
+      const newUrl = `/courses/${id}/student-details`;
+      router.replace(newUrl, undefined, { shallow: true });
+
+      // Hide the success message after 10 seconds
+      setTimeout(() => {
+        setShowPaymentSuccess(false);
+      }, 10000);
+    }
+  }, [payment_success, id, refetchStatus, router]);
+
+  // Handle payment failure from redirect
+  useEffect(() => {
+    if (payment_failed === "true") {
+      setShowPaymentFailed(true);
+      // Remove the query parameter from URL
+      const newUrl = `/courses/${id}/student-details`;
+      router.replace(newUrl, undefined, { shallow: true });
+
+      // Hide the failure message after 15 seconds
+      setTimeout(() => {
+        setShowPaymentFailed(false);
+      }, 15000);
+    }
+  }, [payment_failed, id, router]);
 
   if (loading) {
     return (
@@ -172,21 +210,46 @@ const StudentCourseDetailsPage = () => {
       return;
     }
 
-    // Check if course is paid, open payment modal
-    const isPaidCourse =
-      courseData.course_setting?.is_free !== 1 && courseData.course_price;
-    if (isPaidCourse) {
-      setPaymentModalOpen(true);
-      return;
-    }
-
     // Check if group selection is required but not selected
     if (
       courseData.group_assignment_mode === "before_enroll" &&
       courseData.groups.length > 0 &&
       !selectedGroupId
     ) {
-      return; // Don't proceed with enrollment
+      setGroupModalOpen(true);
+      return;
+    }
+
+    // Get the price from selected group or course
+    let coursePrice = 0;
+    if (selectedGroupId) {
+      const selectedGroup = courseData.groups.find(
+        (g: CourseGroup) => g.id === selectedGroupId
+      );
+      if (selectedGroup) {
+        coursePrice =
+          selectedGroup.setting.has_discount === 1 &&
+          selectedGroup.setting.discounted_price
+            ? parseFloat(selectedGroup.setting.discounted_price)
+            : parseFloat(selectedGroup.setting.price);
+      }
+    } else if (courseData.course_price) {
+      coursePrice =
+        courseData.course_price.discounted_price ||
+        courseData.course_price.price ||
+        0;
+    }
+
+    // Check if course is paid, open payment modal
+    const isPaidCourse =
+      (selectedGroupId &&
+        courseData.groups.find((g: CourseGroup) => g.id === selectedGroupId)
+          ?.setting.is_free !== 1) ||
+      (!selectedGroupId && courseData.course_setting?.is_free !== 1);
+
+    if (isPaidCourse && coursePrice > 0) {
+      setPaymentModalOpen(true);
+      return;
     }
 
     try {
@@ -208,16 +271,48 @@ const StudentCourseDetailsPage = () => {
   const isEnrollmentDisabled = () => {
     if (enrollmentLoading || enrollmentSuccess) return true;
 
-    // If group assignment is required before enrollment and there are groups available
+    // If group assignment is required before enrollment but there are no groups available
     if (
       courseData?.group_assignment_mode === "before_enroll" &&
-      courseData.groups.length > 0 &&
-      !selectedGroupId
+      courseData.groups.length === 0
     ) {
       return true;
     }
 
     return false;
+  };
+
+  // Get the price to display (from selected group or course)
+  const getDisplayPrice = () => {
+    if (selectedGroupId) {
+      const selectedGroup = courseData?.groups.find(
+        (g: CourseGroup) => g.id === selectedGroupId
+      );
+      if (selectedGroup) {
+        return {
+          price:
+            selectedGroup.setting.has_discount === 1 &&
+            selectedGroup.setting.discounted_price
+              ? selectedGroup.setting.discounted_price
+              : selectedGroup.setting.price,
+          discountedPrice:
+            selectedGroup.setting.has_discount === 1
+              ? selectedGroup.setting.discounted_price
+              : null,
+          originalPrice: selectedGroup.setting.price,
+          isFree: selectedGroup.setting.is_free === 1,
+        };
+      }
+    }
+    return {
+      price:
+        courseData?.course_price?.discounted_price ||
+        courseData?.course_price?.price ||
+        0,
+      discountedPrice: courseData?.course_price?.discounted_price,
+      originalPrice: courseData?.course_price?.price,
+      isFree: courseData?.course_setting?.is_free === 1,
+    };
   };
 
   return (
@@ -230,6 +325,42 @@ const StudentCourseDetailsPage = () => {
       />
 
       <Box sx={{ maxWidth: "1200px", mx: "auto", p: 3 }}>
+        {/* Payment Success Message */}
+        {showPaymentSuccess && (
+          <Alert
+            severity="success"
+            onClose={() => setShowPaymentSuccess(false)}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="h6" gutterBottom>
+              {t("Payment Successful!")}
+            </Typography>
+            <Typography variant="body2">
+              {t(
+                "Your payment has been processed successfully. You are now enrolled in this course!"
+              )}
+            </Typography>
+          </Alert>
+        )}
+
+        {/* Payment Failed Message */}
+        {showPaymentFailed && (
+          <Alert
+            severity="error"
+            onClose={() => setShowPaymentFailed(false)}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="h6" gutterBottom>
+              {t("Payment Failed")}
+            </Typography>
+            <Typography variant="body2">
+              {t(
+                "Unfortunately, your payment could not be processed. Please try again or contact support if the problem persists."
+              )}
+            </Typography>
+          </Alert>
+        )}
+
         {/* Course Header */}
         <Card sx={{ mb: 3 }}>
           <CardMedia
@@ -300,8 +431,7 @@ const StudentCourseDetailsPage = () => {
                 {/* Price Card */}
                 <Card variant="outlined" sx={{ p: 3, textAlign: "center" }}>
                   <Box sx={{ mb: 2 }}>
-                    {courseData.course_setting?.is_free === 1 ||
-                    !courseData.course_price ? (
+                    {getDisplayPrice().isFree ? (
                       <Typography
                         variant="h3"
                         color="success.main"
@@ -312,17 +442,15 @@ const StudentCourseDetailsPage = () => {
                     ) : (
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
-                          {courseData.course_price.discounted_price ||
-                            courseData.course_price.price}{" "}
-                          ﷼
+                          {getDisplayPrice().price} ﷼
                         </Typography>
-                        {courseData.course_price.discounted_price && (
+                        {getDisplayPrice().discountedPrice && (
                           <Typography
                             variant="body2"
                             sx={{ textDecoration: "line-through" }}
                             color="text.secondary"
                           >
-                            {courseData.course_price.price} ﷼
+                            {getDisplayPrice().originalPrice} ﷼
                           </Typography>
                         )}
                       </Box>
@@ -558,60 +686,79 @@ const StudentCourseDetailsPage = () => {
                   ) : (
                     /* User is not enrolled - show enrollment form */
                     <Box sx={{ mb: 2 }}>
-                      {/* Group Selection (if required) */}
-                      {courseData.group_assignment_mode === "before_enroll" &&
-                        courseData.groups.length > 0 && (
-                          <Box sx={{ mb: 2 }}>
-                            <FormControl fullWidth size="small">
-                              <InputLabel>
-                                {t("Select Schedule Group")}
-                              </InputLabel>
-                              <Select
-                                value={
-                                  selectedGroupId
-                                    ? selectedGroupId.toString()
-                                    : ""
-                                }
-                                onChange={(
-                                  event: SelectChangeEvent<string>
-                                ) => {
-                                  const value = event.target.value;
-                                  if (value === "") {
-                                    setSelectedGroupId(null);
-                                  } else {
-                                    const numericValue = Number(value);
-                                    if (!isNaN(numericValue)) {
-                                      setSelectedGroupId(numericValue);
-                                    }
-                                  }
-                                }}
-                                label={t("Select Schedule Group")}
-                                displayEmpty
-                                MenuProps={{
-                                  PaperProps: {
-                                    style: {
-                                      maxHeight: 300,
-                                      zIndex: 9999,
-                                    },
-                                  },
-                                }}
-                              >
-                                <MenuItem value="">
-                                  <em>{t("Select a group")}</em>
-                                </MenuItem>
-                                {courseData.groups.map((group: CourseGroup) => (
-                                  <MenuItem
-                                    key={group.id}
-                                    value={group.id.toString()}
+                      {/* Group Selection Button (if required) */}
+                      {courseData.group_assignment_mode === "before_enroll" && (
+                        <>
+                          {courseData.groups.length === 0 ? (
+                            /* No groups available */
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                              {t("No groups available")}
+                            </Alert>
+                          ) : (
+                            /* Show selected group or button to select */
+                            <Box sx={{ mb: 2 }}>
+                              {selectedGroupId ? (
+                                <Card
+                                  variant="outlined"
+                                  sx={{
+                                    p: 2,
+                                    backgroundColor: "primary.50",
+                                    border: "2px solid",
+                                    borderColor: "primary.main",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
                                   >
-                                    {group.name} ({formatDate(group.start_date)}{" "}
-                                    - {formatDate(group.end_date)})
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Box>
-                        )}
+                                    <Box>
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        gutterBottom
+                                      >
+                                        {t("Selected Group")}
+                                      </Typography>
+                                      <Typography
+                                        variant="h6"
+                                        fontWeight="bold"
+                                      >
+                                        {
+                                          courseData.groups.find(
+                                            (g: CourseGroup) =>
+                                              g.id === selectedGroupId
+                                          )?.name
+                                        }
+                                      </Typography>
+                                    </Box>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      onClick={() => setGroupModalOpen(true)}
+                                    >
+                                      {t("Change")}
+                                    </Button>
+                                  </Box>
+                                </Card>
+                              ) : (
+                                <Button
+                                  variant="outlined"
+                                  fullWidth
+                                  size="large"
+                                  onClick={() => setGroupModalOpen(true)}
+                                  startIcon={<Groups />}
+                                  sx={{ mb: 1 }}
+                                >
+                                  {t("Select Course Group")}
+                                </Button>
+                              )}
+                            </Box>
+                          )}
+                        </>
+                      )}
 
                       <Button
                         variant="contained"
@@ -623,9 +770,13 @@ const StudentCourseDetailsPage = () => {
                         startIcon={
                           enrollmentSuccess ? (
                             <CheckCircle />
-                          ) : courseData?.course_setting?.is_free !== 1 &&
-                            courseData?.course_price ? (
-                            <CheckCircle />
+                          ) : courseData?.course_setting?.is_free !== 1 ||
+                            (selectedGroupId &&
+                              courseData?.groups.find(
+                                (g: CourseGroup) => g.id === selectedGroupId
+                              )?.setting.is_free !== 1) ? (
+                            // <AttachMoney />
+                            <SelectAllSharp />
                           ) : undefined
                         }
                       >
@@ -634,14 +785,14 @@ const StudentCourseDetailsPage = () => {
                           : enrollmentSuccess
                           ? t("Enrolled Successfully!")
                           : courseData?.group_assignment_mode ===
-                              "before_enroll" &&
-                            courseData.groups.length > 0 &&
-                            !selectedGroupId
-                          ? t("Select Group to Enroll")
-                          : courseData?.course_setting?.is_free !== 1 &&
-                            courseData?.course_price
-                          ? t("Purchase Course")
-                          : t("Enroll Now")}
+                              "before_enroll" && courseData.groups.length === 0
+                          ? t("No Groups Available")
+                          : courseData?.group_assignment_mode ===
+                              "before_enroll" && !selectedGroupId
+                          ? t("Select Group to Continue")
+                          : getDisplayPrice().isFree
+                          ? t("Enroll Now")
+                          : t("Purchase Course")}
                       </Button>
                     </Box>
                   )}
@@ -882,7 +1033,7 @@ const StudentCourseDetailsPage = () => {
           </Grid>
 
           {/* Instructor Information */}
-          <Grid item xs={12} md={4}>
+          {/* <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -932,9 +1083,23 @@ const StudentCourseDetailsPage = () => {
                 </Button>
               </CardContent>
             </Card>
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
+
+      {/* Group Selection Modal */}
+      {courseData &&
+        courseData.group_assignment_mode === "before_enroll" &&
+        courseData.groups.length > 0 && (
+          <GroupSelectionModal
+            open={groupModalOpen}
+            onClose={() => setGroupModalOpen(false)}
+            groups={courseData.groups}
+            selectedGroupId={selectedGroupId}
+            onSelectGroup={(groupId) => setSelectedGroupId(groupId)}
+            onConfirm={handleEnrollment}
+          />
+        )}
 
       {/* Payment Modal */}
       {courseData && (
@@ -942,13 +1107,7 @@ const StudentCourseDetailsPage = () => {
           open={paymentModalOpen}
           onClose={() => setPaymentModalOpen(false)}
           courseId={courseData.id}
-          coursePrice={
-            typeof courseData.course_price === "object"
-              ? courseData.course_price?.discounted_price ||
-                courseData.course_price?.price ||
-                0
-              : courseData.course_price || 0
-          }
+          coursePrice={parseFloat(getDisplayPrice().price?.toString() || "0")}
           courseName={
             typeof courseData.name === "string"
               ? courseData.name

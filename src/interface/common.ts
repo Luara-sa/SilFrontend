@@ -572,6 +572,21 @@ export interface CourseGroup {
   start_date: string;
   end_date: string;
   expire_joined_date: string;
+  instructor: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    image: string;
+  };
+  setting: {
+    mode: string;
+    is_free: number;
+    is_upcoming: number;
+    price: string;
+    has_discount: number;
+    discounted_price: string | null;
+  };
   schedules: CourseSchedule[];
 }
 
