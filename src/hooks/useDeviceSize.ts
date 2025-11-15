@@ -2,22 +2,29 @@ import { useState, useEffect } from "react";
 
 type DeviceSize = "mobile" | "tablet" | "desktop";
 
+const getDeviceSize = (): DeviceSize => {
+  if (typeof window === "undefined") return "desktop";
+  
+  const { innerWidth } = window;
+  if (innerWidth <= 768) {
+    return "mobile";
+  } else if (innerWidth > 768 && innerWidth <= 1024) {
+    return "tablet";
+  } else {
+    return "desktop";
+  }
+};
+
 const useDeviceSize = (throttleTime = 100): DeviceSize => {
-  const [deviceSize, setDeviceSize] = useState<DeviceSize>("desktop");
+  const [deviceSize, setDeviceSize] = useState<DeviceSize>(() => getDeviceSize());
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     let timeoutId: number;
 
     const handleResize = () => {
-      const { innerWidth } = window;
-
-      if (innerWidth <= 768) {
-        setDeviceSize("mobile");
-      } else if (innerWidth > 768 && innerWidth <= 1024) {
-        setDeviceSize("tablet");
-      } else {
-        setDeviceSize("desktop");
-      }
+      setDeviceSize(getDeviceSize());
     };
 
     handleResize();
@@ -29,19 +36,21 @@ const useDeviceSize = (throttleTime = 100): DeviceSize => {
 
       timeoutId = window.setTimeout(handleResize, throttleTime);
     };
-    if (typeof window !== "undefined") {
-      window.addEventListener("resize", handleResizeThrottled);
-    }
+    
+    window.addEventListener("resize", handleResizeThrottled);
 
     return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("resize", handleResizeThrottled);
-      }
+      window.removeEventListener("resize", handleResizeThrottled);
       clearTimeout(timeoutId);
     };
   }, [throttleTime]);
 
-  return deviceSize || "desktop";
+  // Return desktop for SSR to prevent hydration mismatch
+  if (!isMounted) {
+    return "desktop";
+  }
+
+  return deviceSize;
 };
 
 export default useDeviceSize;

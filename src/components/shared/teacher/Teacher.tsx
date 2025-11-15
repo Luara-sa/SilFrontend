@@ -1,5 +1,6 @@
 import { Avatar, Box, Typography } from "@mui/material";
 import React, { FC } from "react";
+import useTranslation from "next-translate/useTranslation";
 
 interface Props {
   image: any;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export const Teacher: FC<Props> = (props) => {
+  const { t } = useTranslation("course");
   return (
     <Box
       sx={{
@@ -68,7 +70,7 @@ export const Teacher: FC<Props> = (props) => {
               color: "gray.50",
             }}
           >
-            Teacher
+            {t("Teacher")}
           </Typography>
         )}
       </Box>

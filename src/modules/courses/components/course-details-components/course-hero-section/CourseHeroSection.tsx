@@ -1,6 +1,7 @@
 import { Typography, Box, Rating } from "@mui/material";
 import React from "react";
 import StarIcon from "@mui/icons-material/Star";
+import useTranslation from "next-translate/useTranslation";
 import { StringDouble } from "interface/common";
 import ConditionalRender, { Case } from "components/custom/conditionalRender";
 import CourseStopContinueButton from "../../course-outline-row/course-stop-continue-button/CourseStopContinueButton";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export const CourseHeroSection = (props: Props) => {
+  const { t } = useTranslation("course");
   return (
     <Box
       sx={{
@@ -81,7 +83,7 @@ export const CourseHeroSection = (props: Props) => {
                     color: "gray.active",
                   }}
                 >
-                  Tags:
+                  {t("Tags")}:
                 </Typography>
                 <Box
                   sx={{

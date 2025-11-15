@@ -27,13 +27,13 @@ export const mapStudentCourseToCourseLegacy = (studentCourse: StudentCourse): Co
     id: studentCourse.id,
     course_id: studentCourse.id, // Using the same ID
     discount: discountedPrice && originalPrice > 0 ? ((originalPrice - discountedPrice) / originalPrice) * 100 : 0,
-    hours: studentCourse.duration,
-    image: studentCourse.thumbnail,
+    hours: studentCourse.duration || 0,
+    image: studentCourse.thumbnail || '',
     level: undefined, // Not provided in new API
     name: name,
     price: finalPrice,
-    rate: studentCourse.reviews.average_rating,
-    type: studentCourse.mode,
+    rate: studentCourse.reviews?.average_rating || 0,
+    type: studentCourse.mode || '',
     // Add pricing details for better display
     originalPrice: originalPrice,
     discountedPrice: discountedPrice ?? undefined,
@@ -43,10 +43,10 @@ export const mapStudentCourseToCourseLegacy = (studentCourse: StudentCourse): Co
     max_members: undefined,
     parent_id: undefined,
     users: undefined,
-    start_date: new Date(studentCourse.start_date),
+    start_date: studentCourse.start_date ? new Date(studentCourse.start_date) : new Date(),
     created_at: undefined,
     deleted_at: undefined,
-    end_date: new Date(studentCourse.end_date),
+    end_date: studentCourse.end_date ? new Date(studentCourse.end_date) : new Date(),
     updated_at: undefined,
     tags: undefined,
     course_test: [],
@@ -60,13 +60,15 @@ export const mapStudentCourseToCourseLegacy = (studentCourse: StudentCourse): Co
     rating_list: [],
     price_without_inst: finalPrice,
     total_with_vat_without_inst: finalPrice,
-    trainer_name: `${studentCourse.instructor.first_name} ${studentCourse.instructor.last_name}`,
+    trainer_name: studentCourse.instructor 
+      ? `${studentCourse.instructor.first_name || ''} ${studentCourse.instructor.last_name || ''}`.trim() 
+      : 'N/A',
     total_with_vat_with_inst: finalPrice,
     installments: [],
     reviews_report: [
       {
-        count: studentCourse.reviews.total_rating,
-        rate_number: studentCourse.reviews.average_rating,
+        count: studentCourse.reviews?.total_rating || 0,
+        rate_number: studentCourse.reviews?.average_rating || 0,
       },
     ],
   };

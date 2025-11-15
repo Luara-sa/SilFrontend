@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
 
 import { Box } from "@mui/material";
 
@@ -18,6 +19,16 @@ import {
   JoinForFree2,
 } from "../components";
 import { PathsSection } from "../components/paths-section/PathsSection";
+import { LatestCoursesSectionLoader } from "../components/latest-courses-section/LatestCoursesSectionLoader";
+
+// Import LatestCoursesSection with SSR disabled to prevent hydration errors
+const LatestCoursesSection = dynamic(
+  () => import("../components/latest-courses-section/LatestCoursesSection").then(mod => mod.LatestCoursesSection),
+  { 
+    ssr: false,
+    loading: () => <LatestCoursesSectionLoader />
+  }
+);
 
 export const HomeIndex = () => {
   const [courses_Paths, setCourses_Paths] = useState<{
@@ -50,7 +61,7 @@ export const HomeIndex = () => {
         {/* <FireBaseSnack /> */}
         <HeroSection />
         <ClientSection />
-        <JoinForFree1 />
+        <LatestCoursesSection />
         {courses_Paths?.courses && (
           <CoursesSection courses={courses_Paths.courses} />
         )}

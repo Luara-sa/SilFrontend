@@ -2,7 +2,9 @@ import { useRouter } from "next/router";
 import { 
   getCourseMode as getCourseModeHelper,
   getCourseLevel as getCourseLevelHelper,
-  getCourseLevelById as getCourseLevelByIdHelper
+  getCourseLevelById as getCourseLevelByIdHelper,
+  getLearningStructure as getLearningStructureHelper,
+  getDeliveryMode as getDeliveryModeHelper
 } from "helper/courseMappings";
 
 /**
@@ -42,10 +44,32 @@ export const useCourseMappings = () => {
     return getCourseLevelByIdHelper(levelId, levelName || '', locale);
   };
 
+  /**
+   * Get translated learning structure label
+   * @param structure - Learning structure value (structured, unstructured)
+   * @returns Translated structure label
+   */
+  const getLearningStructure = (structure: string): string => {
+    if (!structure) return '';
+    return getLearningStructureHelper(structure, locale);
+  };
+
+  /**
+   * Get translated delivery mode label
+   * @param mode - Delivery mode value (synchronous, asynchronous)
+   * @returns Translated mode label
+   */
+  const getDeliveryMode = (mode: string): string => {
+    if (!mode) return '';
+    return getDeliveryModeHelper(mode, locale);
+  };
+
   return {
     getCourseMode,
     getCourseLevel,
     getCourseLevelById,
+    getLearningStructure,
+    getDeliveryMode,
   };
 };
 

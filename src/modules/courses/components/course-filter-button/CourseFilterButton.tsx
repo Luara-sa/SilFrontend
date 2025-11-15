@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Badge } from "@mui/material";
 import { FilterList } from "@mui/icons-material";
+import useTranslation from "next-translate/useTranslation";
 import { filterStore } from "store/filterStore";
 
 interface CourseFilterButtonProps {
@@ -10,6 +11,7 @@ interface CourseFilterButtonProps {
 export const CourseFilterButton: React.FC<CourseFilterButtonProps> = ({
   onOpenFilter,
 }) => {
+  const { t } = useTranslation("course");
   const { filters } = filterStore();
 
   // Count active filters
@@ -38,7 +40,7 @@ export const CourseFilterButton: React.FC<CourseFilterButtonProps> = ({
           fontWeight: activeFiltersCount > 0 ? 600 : 400,
         }}
       >
-        Filters
+        {t("Filters")}
       </Button>
     </Badge>
   );

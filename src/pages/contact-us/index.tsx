@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import useTranslation from "next-translate/useTranslation";
 import * as Yup from "yup";
 
 import { Box, Button, Typography } from "@mui/material";
@@ -8,7 +9,6 @@ import { Box, Button, Typography } from "@mui/material";
 import { TextFieldStyled } from "components/styled/TextFiled";
 import { Seo } from "components/shared";
 
-import CallOutlinedIcon from "@mui/icons-material/CallOutlined";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import ButtonLoader from "components/custom/ButtonLoader";
@@ -25,15 +25,18 @@ const defaultFormValues = {
 
 const ContactUS = () => {
   const router = useRouter();
+  const { t } = useTranslation("contact");
 
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const validationSchema = Yup.object().shape({
-    name: Yup.string().required("Name is required"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    phone: Yup.string().required("Phone is required"),
-    subject: Yup.string().required("Subject is required"),
-    message: Yup.string().required("Message is required"),
+    name: Yup.string().required(t("Name is required")),
+    email: Yup.string()
+      .email(t("Invalid email"))
+      .required(t("Email is required")),
+    phone: Yup.string().required(t("Phone is required")),
+    subject: Yup.string().required(t("Subject is required")),
+    message: Yup.string().required(t("Message is required")),
   });
 
   const formOptions = {
@@ -52,12 +55,10 @@ const ContactUS = () => {
       .then((res: any) => {
         reset(defaultFormValues);
         eventEmitter.emit("enqueueSnackbar", {
-          message: "Email Sent Successfuly",
+          message: t("Email Sent Successfully"),
           variant: "success",
-          snack: {
-            autoHideDuration: 3000,
-            preventDuplicate: true,
-          },
+          autoHideDuration: 3000,
+          preventDuplicate: true,
         });
       })
       .catch((err) => console.log(err))
@@ -128,7 +129,7 @@ const ContactUS = () => {
                     fontSize: "30px",
                   }}
                 >
-                  Get in touch
+                  {t("Get in touch")}
                 </Typography>
                 <Box sx={{ mt: "20px" }}>
                   <Typography
@@ -138,11 +139,7 @@ const ContactUS = () => {
                       //  mt: "20vh"
                     }}
                   >
-                    We&apos;re here to help you on your learning journey.
-                    Whether you have questions about our courses, need technical
-                    support, or want to discuss corporate training solutions,
-                    our team is ready to assist you. Reach out to us and
-                    we&apos;ll respond within 24 hours.
+                    {t("We're here to help")}
                   </Typography>
                 </Box>
               </Box>
@@ -171,7 +168,7 @@ const ContactUS = () => {
                     fontWeight: "700",
                   }}
                 >
-                  Get in touch
+                  {t("Get in touch")}
                 </Typography>
               </Box>
               <Box
@@ -184,7 +181,7 @@ const ContactUS = () => {
                 <TextFieldStyled
                   variant="outlined"
                   fullWidth
-                  placeholder="Full Name"
+                  placeholder={t("Full Name")}
                   {...register("name")}
                   error={Boolean(errors.name?.message)}
                   helperText={(errors.name?.message as any) || ""}
@@ -192,7 +189,7 @@ const ContactUS = () => {
                 <TextFieldStyled
                   variant="outlined"
                   fullWidth
-                  placeholder="Email"
+                  placeholder={t("Email")}
                   {...register("email")}
                   error={Boolean(errors.email?.message)}
                   helperText={(errors.email?.message as any) || ""}
@@ -209,7 +206,7 @@ const ContactUS = () => {
                 <TextFieldStyled
                   variant="outlined"
                   fullWidth
-                  placeholder="Phone"
+                  placeholder={t("Phone")}
                   {...register("phone")}
                   error={Boolean(errors.phone?.message)}
                   helperText={(errors.phone?.message as any) || ""}
@@ -217,7 +214,7 @@ const ContactUS = () => {
                 <TextFieldStyled
                   variant="outlined"
                   fullWidth
-                  placeholder="Subject"
+                  placeholder={t("Subject")}
                   {...register("subject")}
                   error={Boolean(errors.subject?.message)}
                   helperText={(errors.subject?.message as any) || ""}
@@ -235,7 +232,7 @@ const ContactUS = () => {
                   fullWidth
                   multiline
                   rows={10}
-                  placeholder="Message"
+                  placeholder={t("Message")}
                   {...register("message")}
                   error={Boolean(errors.message?.message)}
                   helperText={(errors.message?.message as any) || ""}
@@ -260,28 +257,8 @@ const ContactUS = () => {
                     boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
                   }}
                 >
-                  Send
+                  {t("Send")}
                 </ButtonLoader>
-                <Button
-                  startIcon={<CallOutlinedIcon />}
-                  variant="contained"
-                  sx={{
-                    mt: "20px",
-                    backgroundColor: "warning.main",
-                    color: "#000",
-                    borderRadius: "10px",
-                    fontSize: { xs: "14px", md: "19px" },
-                    fontWeight: "700",
-                    height: "45px",
-                    width: "100%",
-                    boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
-                    ":hover": {
-                      backgroundColor: "#ffca2b",
-                    },
-                  }}
-                >
-                  Call Us
-                </Button>
               </Box>
             </Box>
           </Box>

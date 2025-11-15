@@ -1,12 +1,11 @@
 import React from "react";
+import { Box } from "@mui/material";
 import { _AuthService } from "services/auth.service";
 import { _WithAuthService } from "services/withAuth.service";
 import { HeaderMobile } from "./Responsive/HeaderMobile";
-import useDeviceSize from "hooks/useDeviceSize";
 import { HeaderDesktop } from "./Responsive/HeaderDesktop";
 
 export const Header = () => {
-  const DeviceSize = useDeviceSize();
   const handleClick = () => {
     _WithAuthService
       .testNotification()
@@ -16,10 +15,12 @@ export const Header = () => {
 
   return (
     <>
-      {(DeviceSize === "desktop" || DeviceSize === "tablet") && (
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
         <HeaderDesktop />
-      )}
-      {DeviceSize === "mobile" && <HeaderMobile />}
+      </Box>
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        <HeaderMobile />
+      </Box>
     </>
   );
 };

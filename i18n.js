@@ -8,5 +8,6 @@ module.exports = {
     "/auth/login": ["auth"],
     "/auth/signup": ["auth"],
     "/auth/forget-password": ["auth"],
+    "/contact-us": ["contact"],
   },
 };

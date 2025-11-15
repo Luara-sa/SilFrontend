@@ -1,16 +1,17 @@
 import React from "react";
-import useDeviceSize from "hooks/useDeviceSize";
+import { Box } from "@mui/material";
 import { LanguageMenuActionDesktop } from "./Responsive/LanguageMenuActionDesktop";
 import { LanguageMenuActionMobile } from "./Responsive/LanguageMenuActionMobile";
 
 export const LanguageMenuAction = () => {
-  const DeviceSize = useDeviceSize();
   return (
     <>
-      {(DeviceSize === "desktop" || DeviceSize === "tablet") && (
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
         <LanguageMenuActionDesktop />
-      )}
-      {DeviceSize === "mobile" && <LanguageMenuActionMobile />}
+      </Box>
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        <LanguageMenuActionMobile />
+      </Box>
     </>
   );
 };

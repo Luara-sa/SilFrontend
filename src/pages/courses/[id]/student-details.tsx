@@ -53,7 +53,12 @@ const StudentCourseDetailsPage = () => {
   const { id } = router.query;
   const { t } = useTranslation("course");
   const { isAuthenticated } = useAuth();
-  const { getCourseMode, getCourseLevelById } = useCourseMappings();
+  const {
+    getCourseMode,
+    getCourseLevelById,
+    getLearningStructure,
+    getDeliveryMode,
+  } = useCourseMappings();
 
   const { courseData, loading, error, refetch } = useDetailedStudentCourse(
     id ? String(id) : null
@@ -108,7 +113,7 @@ const StudentCourseDetailsPage = () => {
           {error}
         </Alert>
         <Button variant="outlined" onClick={refetch}>
-          Try Again
+          {t("Try Again")}
         </Button>
       </Box>
     );
@@ -118,14 +123,14 @@ const StudentCourseDetailsPage = () => {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" color="text.secondary">
-          Course not found
+          {t("Course not found")}
         </Typography>
         <Button
           variant="outlined"
           onClick={() => router.push("/courses")}
           sx={{ mt: 2 }}
         >
-          Back to Courses
+          {t("Back to Courses")}
         </Button>
       </Box>
     );
@@ -258,18 +263,21 @@ const StudentCourseDetailsPage = () => {
                     variant="outlined"
                   />
                   <Chip
-                    label={courseData.learning_structure.replace("_", " ")}
+                    label={getLearningStructure(courseData.learning_structure)}
                     variant="outlined"
                   />
-                  <Chip label={courseData.delivery_mode} variant="outlined" />
+                  <Chip
+                    label={getDeliveryMode(courseData.delivery_mode)}
+                    variant="outlined"
+                  />
                   {courseData.course_setting?.is_free === 1 && (
-                    <Chip label="Free" color="success" />
+                    <Chip label={t("Free")} color="success" />
                   )}
                   {courseData.course_setting?.is_live === 1 && (
-                    <Chip label="Live" color="error" />
+                    <Chip label={t("Live")} color="error" />
                   )}
                   {courseData.course_setting?.is_upcoming === 1 && (
-                    <Chip label="Upcoming" color="warning" />
+                    <Chip label={t("Upcoming")} color="warning" />
                   )}
                 </Box>
 
@@ -283,7 +291,7 @@ const StudentCourseDetailsPage = () => {
                     precision={0.5}
                   />
                   <Typography variant="body2" color="text.secondary">
-                    ({courseData.reviews.total_rating} reviews)
+                    ({courseData.reviews.total_rating} {t("reviews")})
                   </Typography>
                 </Box>
               </Grid>
@@ -299,7 +307,7 @@ const StudentCourseDetailsPage = () => {
                         color="success.main"
                         fontWeight="bold"
                       >
-                        Free
+                        {t("Free")}
                       </Typography>
                     ) : (
                       <Box>
@@ -333,7 +341,7 @@ const StudentCourseDetailsPage = () => {
                     <Box sx={{ mb: 2 }}>
                       <Alert severity="success" sx={{ mb: 2 }}>
                         <Typography variant="body2" fontWeight="500">
-                          You are enrolled in this course!
+                          {t("You are enrolled in this course!")}
                         </Typography>
                       </Alert>
 
@@ -341,7 +349,7 @@ const StudentCourseDetailsPage = () => {
                       <Card sx={{ mb: 2 }}>
                         <CardContent>
                           <Typography variant="h6" gutterBottom>
-                            Your Progress
+                            {t("Your Progress")}
                           </Typography>
                           <Grid container spacing={2}>
                             <Grid item xs={6}>
@@ -349,7 +357,7 @@ const StudentCourseDetailsPage = () => {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Status
+                                {t("status")}
                               </Typography>
                               <Chip
                                 label={enrollmentStatus.statistic.status}
@@ -367,7 +375,7 @@ const StudentCourseDetailsPage = () => {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Progress
+                                {t("Progress")}
                               </Typography>
                               <Typography variant="body1" fontWeight="500">
                                 {enrollmentStatus.statistic.progress}%
@@ -378,7 +386,7 @@ const StudentCourseDetailsPage = () => {
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Completed Tasks
+                                {t("Completed Tasks")}
                               </Typography>
                               <Typography variant="body1" fontWeight="500">
                                 {
@@ -407,7 +415,7 @@ const StudentCourseDetailsPage = () => {
                                 }}
                               >
                                 <Receipt color="primary" />
-                                Purchase Details
+                                {t("Purchase Details")}
                               </Typography>
 
                               <Grid container spacing={2}>
@@ -416,21 +424,21 @@ const StudentCourseDetailsPage = () => {
                                     variant="body2"
                                     color="text.secondary"
                                   >
-                                    Payment Method
+                                    {t("Payment Method")}
                                   </Typography>
                                   <Chip
                                     label={
                                       enrollmentStatus.purchase_details.purchase
                                         .payment_method === "bank_transfer"
-                                        ? "Bank Transfer"
+                                        ? t("Bank Transfer")
                                         : enrollmentStatus.purchase_details
                                             .purchase.payment_method ===
                                           "paymob"
-                                        ? "Credit Card"
+                                        ? t("Credit Card")
                                         : enrollmentStatus.purchase_details
                                             .purchase.payment_method ===
                                           "tamara"
-                                        ? "Tamara"
+                                        ? t("Tamara")
                                         : enrollmentStatus.purchase_details
                                             .purchase.payment_method
                                     }
@@ -446,7 +454,7 @@ const StudentCourseDetailsPage = () => {
                                     variant="body2"
                                     color="text.secondary"
                                   >
-                                    Payment Status
+                                    {t("Payment Status")}
                                   </Typography>
                                   <Chip
                                     label={
@@ -488,7 +496,7 @@ const StudentCourseDetailsPage = () => {
                                         color="text.secondary"
                                         gutterBottom
                                       >
-                                        Uploaded Document
+                                        {t("Uploaded Document")}
                                       </Typography>
                                       <Button
                                         variant="outlined"
@@ -503,7 +511,7 @@ const StudentCourseDetailsPage = () => {
                                         }
                                         sx={{ textTransform: "none" }}
                                       >
-                                        View Bank Transfer Receipt
+                                        {t("View Bank Transfer Receipt")}
                                       </Button>
                                     </Grid>
                                   )}
@@ -519,14 +527,14 @@ const StudentCourseDetailsPage = () => {
                                         color="text.secondary"
                                         gutterBottom
                                       >
-                                        Installments
+                                        {t("Installments")}
                                       </Typography>
                                       <Typography variant="body2">
                                         {
                                           enrollmentStatus.purchase_details
                                             .installments.length
                                         }{" "}
-                                        installment(s) available
+                                        {t("installment(s) available")}
                                       </Typography>
                                     </Grid>
                                   )}
@@ -544,7 +552,7 @@ const StudentCourseDetailsPage = () => {
                           router.push(`/courses/${courseData.id}/curriculum`)
                         }
                       >
-                        Continue Learning
+                        {t("Continue Learning")}
                       </Button>
                     </Box>
                   ) : (
@@ -555,7 +563,9 @@ const StudentCourseDetailsPage = () => {
                         courseData.groups.length > 0 && (
                           <Box sx={{ mb: 2 }}>
                             <FormControl fullWidth size="small">
-                              <InputLabel>Select Schedule Group</InputLabel>
+                              <InputLabel>
+                                {t("Select Schedule Group")}
+                              </InputLabel>
                               <Select
                                 value={
                                   selectedGroupId
@@ -575,7 +585,7 @@ const StudentCourseDetailsPage = () => {
                                     }
                                   }
                                 }}
-                                label="Select Schedule Group"
+                                label={t("Select Schedule Group")}
                                 displayEmpty
                                 MenuProps={{
                                   PaperProps: {
@@ -587,7 +597,7 @@ const StudentCourseDetailsPage = () => {
                                 }}
                               >
                                 <MenuItem value="">
-                                  <em>Select a group</em>
+                                  <em>{t("Select a group")}</em>
                                 </MenuItem>
                                 {courseData.groups.map((group: CourseGroup) => (
                                   <MenuItem
@@ -620,18 +630,18 @@ const StudentCourseDetailsPage = () => {
                         }
                       >
                         {enrollmentLoading
-                          ? "Processing..."
+                          ? t("Processing...")
                           : enrollmentSuccess
-                          ? "Enrolled Successfully!"
+                          ? t("Enrolled Successfully!")
                           : courseData?.group_assignment_mode ===
                               "before_enroll" &&
                             courseData.groups.length > 0 &&
                             !selectedGroupId
-                          ? "Select Group to Enroll"
+                          ? t("Select Group to Enroll")
                           : courseData?.course_setting?.is_free !== 1 &&
                             courseData?.course_price
-                          ? "Purchase Course"
-                          : "Enroll Now"}
+                          ? t("Purchase Course")
+                          : t("Enroll Now")}
                       </Button>
                     </Box>
                   )}
@@ -647,7 +657,7 @@ const StudentCourseDetailsPage = () => {
                           color="inherit"
                           onClick={resetEnrollment}
                         >
-                          Try Again
+                          {t("Try Again")}
                         </Button>
                       }
                     >
@@ -666,18 +676,19 @@ const StudentCourseDetailsPage = () => {
                           color="inherit"
                           onClick={() => router.push("/profile")}
                         >
-                          View My Courses
+                          {t("View My Courses")}
                         </Button>
                       }
                     >
-                      Thank you for enrolling in our course!
+                      {t("Thank you for enrolling in our course!")}
                     </Alert>
                   )}
 
                   <Typography variant="body2" color="text.secondary">
+                    {courseData.enrollments_count}{" "}
                     {courseData.enrollments_count > 1
-                      ? `${courseData.enrollments_count} students enrolled`
-                      : `${courseData.enrollments_count} student enrolled`}
+                      ? t("students enrolled")
+                      : t("student enrolled")}
                   </Typography>
                 </Card>
               </Grid>
@@ -692,7 +703,7 @@ const StudentCourseDetailsPage = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Course Information
+                  {t("Course Information")}
                 </Typography>
 
                 <Grid container spacing={2}>
@@ -708,10 +719,10 @@ const StudentCourseDetailsPage = () => {
                       <AccessTime color="primary" />
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          Duration
+                          {t("Duration")}
                         </Typography>
                         <Typography variant="body1" fontWeight="500">
-                          {courseData.duration} days
+                          {courseData.duration} {t("days")}
                         </Typography>
                       </Box>
                     </Box>
@@ -729,10 +740,10 @@ const StudentCourseDetailsPage = () => {
                       <School color="primary" />
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          Topics
+                          {t("Topics")}
                         </Typography>
                         <Typography variant="body1" fontWeight="500">
-                          {courseData.topics_count} topics
+                          {courseData.topics_count} {t("topics")}
                         </Typography>
                       </Box>
                     </Box>
@@ -750,7 +761,7 @@ const StudentCourseDetailsPage = () => {
                       <CalendarToday color="primary" />
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          Start Date
+                          {t("Start Date")}
                         </Typography>
                         <Typography variant="body1" fontWeight="500">
                           {formatDate(courseData.start_date)}
@@ -771,7 +782,7 @@ const StudentCourseDetailsPage = () => {
                       <CalendarToday color="primary" />
                       <Box>
                         <Typography variant="body2" color="text.secondary">
-                          End Date
+                          {t("End Date")}
                         </Typography>
                         <Typography variant="body1" fontWeight="500">
                           {formatDate(courseData.end_date)}
@@ -793,10 +804,10 @@ const StudentCourseDetailsPage = () => {
                         <Groups color="primary" />
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            Group Sessions
+                            {t("Group Sessions")}
                           </Typography>
                           <Typography variant="body1" fontWeight="500">
-                            {courseData.group_sessions_count} sessions
+                            {courseData.group_sessions_count} {t("sessions")}
                           </Typography>
                         </Box>
                       </Box>
@@ -810,7 +821,7 @@ const StudentCourseDetailsPage = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Category
+                  {t("Category")}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Avatar
@@ -830,7 +841,7 @@ const StudentCourseDetailsPage = () => {
               <Card sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom fontWeight="bold">
-                    Course Levels
+                    {t("Course Levels")}
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                     {courseData.levels.map((level: CourseLevel) => (
@@ -851,7 +862,7 @@ const StudentCourseDetailsPage = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom fontWeight="bold">
-                    Target Audience
+                    {t("Target Audience")}
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                     {courseData.target_audiences.map(
@@ -875,7 +886,7 @@ const StudentCourseDetailsPage = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Instructor
+                  {t("Instructor")}
                 </Typography>
 
                 {courseData.instructor ? (
@@ -906,7 +917,7 @@ const StudentCourseDetailsPage = () => {
                   </>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Instructor information not available
+                    {t("Instructor information not available")}
                   </Typography>
                 )}
 
@@ -917,7 +928,7 @@ const StudentCourseDetailsPage = () => {
                   fullWidth
                   onClick={() => router.push("/courses")}
                 >
-                  Back to Courses
+                  {t("Back to Courses")}
                 </Button>
               </CardContent>
             </Card>

@@ -106,3 +106,53 @@ export const getLevelOrder = (level: string): number => {
   return LEVEL_ORDER[normalizedLevel] || 0;
 };
 
+/**
+ * Learning Structure Direct Mappings
+ */
+export type LearningStructure = 'structured' | 'unstructured';
+
+const LEARNING_STRUCTURE_TRANSLATIONS: Record<LearningStructure, { en: string; ar: string }> = {
+  structured: { en: 'Structured', ar: 'منظم' },
+  unstructured: { en: 'Unstructured', ar: 'غير منظم' },
+};
+
+/**
+ * Get learning structure translation
+ * @param structure - The learning structure value from API
+ * @param locale - Current locale ('en' or 'ar')
+ * @returns Translated structure string
+ */
+export const getLearningStructure = (structure: string, locale: string = 'en'): string => {
+  const normalizedStructure = structure.toLowerCase().replace('_', '') as LearningStructure;
+  const translation = LEARNING_STRUCTURE_TRANSLATIONS[normalizedStructure];
+  
+  if (!translation) return structure.replace('_', ' ');
+  
+  return locale === 'ar' ? translation.ar : translation.en;
+};
+
+/**
+ * Delivery Mode Direct Mappings
+ */
+export type DeliveryMode = 'synchronous' | 'asynchronous';
+
+const DELIVERY_MODE_TRANSLATIONS: Record<DeliveryMode, { en: string; ar: string }> = {
+  synchronous: { en: 'Synchronous', ar: 'متزامن' },
+  asynchronous: { en: 'Asynchronous', ar: 'غير متزامن' },
+};
+
+/**
+ * Get delivery mode translation
+ * @param mode - The delivery mode value from API
+ * @param locale - Current locale ('en' or 'ar')
+ * @returns Translated mode string
+ */
+export const getDeliveryMode = (mode: string, locale: string = 'en'): string => {
+  const normalizedMode = mode.toLowerCase() as DeliveryMode;
+  const translation = DELIVERY_MODE_TRANSLATIONS[normalizedMode];
+  
+  if (!translation) return mode.charAt(0).toUpperCase() + mode.slice(1);
+  
+  return locale === 'ar' ? translation.ar : translation.en;
+};
+

@@ -7,3 +7,4 @@ export * from "./join-for-free-1/JoinForFree1";
 export * from "./hero-section/HeroSection";
 export * from "./join-for-free-2/JoinForFree2";
 export * from "./superior-section/SuperiorSection";
+export * from "./latest-courses-section/LatestCoursesSection";

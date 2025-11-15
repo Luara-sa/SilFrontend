@@ -22,6 +22,7 @@ import {
   Rating,
 } from "@mui/material";
 import { ExpandMore, Close, FilterList, Clear } from "@mui/icons-material";
+import useTranslation from "next-translate/useTranslation";
 
 import { filterStore } from "store/filterStore";
 import { StudentCoursesFilters } from "interface/common";
@@ -40,6 +41,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
   onClose,
   onApplyFilters,
 }) => {
+  const { t } = useTranslation("course");
   const { filters, setFilters, resetFilters } = filterStore();
   const { canAccess, isLoading } = useUserAccess();
   const { getCourseMode } = useCourseMappings();
@@ -178,7 +180,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
           variant="h6"
           sx={{ display: "flex", alignItems: "center", gap: 1 }}
         >
-          <FilterList /> Filters
+          <FilterList /> {t("Filters")}
         </Typography>
         <IconButton onClick={onClose}>
           <Close />
@@ -191,13 +193,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Search
+            {t("Search")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <TextField
             fullWidth
-            label="Search courses"
+            label={t("Search courses")}
             value={localFilters.search || ""}
             onChange={(e) => handleInputChange("search", e.target.value)}
             size="small"
@@ -210,20 +212,20 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle1" fontWeight={600}>
-              Category
+              {t("Category")}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <FormControl fullWidth size="small">
-              <InputLabel>Select Category</InputLabel>
+              <InputLabel>{t("Select Category")}</InputLabel>
               <Select
                 value={localFilters.category_id || ""}
                 onChange={(e) =>
                   handleInputChange("category_id", e.target.value)
                 }
-                label="Select Category"
+                label={t("Select Category")}
               >
-                <MenuItem value="">All Categories</MenuItem>
+                <MenuItem value="">{t("All Categories")}</MenuItem>
                 {Array.isArray(studentCategories) &&
                   studentCategories.length > 0 &&
                   studentCategories.map((category) => (
@@ -241,18 +243,18 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Course Mode
+            {t("Course Mode")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Course Mode</InputLabel>
+            <InputLabel>{t("Course Mode")}</InputLabel>
             <Select
               value={localFilters.mode || ""}
               onChange={(e) => handleInputChange("mode", e.target.value)}
-              label="Course Mode"
+              label={t("Course Mode")}
             >
-              <MenuItem value="">All Modes</MenuItem>
+              <MenuItem value="">{t("All Modes")}</MenuItem>
               <MenuItem value="online">{getCourseMode('online')}</MenuItem>
               <MenuItem value="location">{getCourseMode('location')}</MenuItem>
               <MenuItem value="hybrid">{getCourseMode('hybrid')}</MenuItem>
@@ -265,22 +267,22 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Learning Structure
+            {t("Learning Structure")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Learning Structure</InputLabel>
+            <InputLabel>{t("Learning Structure")}</InputLabel>
             <Select
               value={localFilters.learning_structure || ""}
               onChange={(e) =>
                 handleInputChange("learning_structure", e.target.value)
               }
-              label="Learning Structure"
+              label={t("Learning Structure")}
             >
-              <MenuItem value="">All Structures</MenuItem>
-              <MenuItem value="structured">Structured</MenuItem>
-              <MenuItem value="unstructured">Unstructured</MenuItem>
+              <MenuItem value="">{t("All Structures")}</MenuItem>
+              <MenuItem value="structured">{t("Structured")}</MenuItem>
+              <MenuItem value="unstructured">{t("Unstructured")}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>
@@ -290,22 +292,22 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Delivery Mode
+            {t("Delivery Mode")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Delivery Mode</InputLabel>
+            <InputLabel>{t("Delivery Mode")}</InputLabel>
             <Select
               value={localFilters.delivery_mode || ""}
               onChange={(e) =>
                 handleInputChange("delivery_mode", e.target.value)
               }
-              label="Delivery Mode"
+              label={t("Delivery Mode")}
             >
-              <MenuItem value="">All Delivery Modes</MenuItem>
-              <MenuItem value="synchronous">Synchronous</MenuItem>
-              <MenuItem value="asynchronous">Asynchronous</MenuItem>
+              <MenuItem value="">{t("All Delivery Modes")}</MenuItem>
+              <MenuItem value="synchronous">{t("Synchronous")}</MenuItem>
+              <MenuItem value="asynchronous">{t("Asynchronous")}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>
@@ -315,13 +317,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Price Range
+            {t("Price Range")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ px: 1 }}>
             <Typography variant="body2" color="textSecondary" gutterBottom>
-              SAR {priceRange[0]} - SAR {priceRange[1]}
+              {t("sar")} {priceRange[0]} - {t("sar")} {priceRange[1]}
             </Typography>
             <Slider
               value={priceRange}
@@ -340,13 +342,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Duration (Hours)
+            {t("Duration (Hours)")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ px: 1 }}>
             <Typography variant="body2" color="textSecondary" gutterBottom>
-              {durationRange[0]} - {durationRange[1]} hours
+              {durationRange[0]} - {durationRange[1]} {t("hours")}
             </Typography>
             <Slider
               value={durationRange}
@@ -365,23 +367,23 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Minimum Rating
+            {t("Minimum Rating")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Minimum Rating</InputLabel>
+            <InputLabel>{t("Minimum Rating")}</InputLabel>
             <Select
               value={localFilters.min_rating || ""}
               onChange={(e) => handleInputChange("min_rating", e.target.value)}
-              label="Minimum Rating"
+              label={t("Minimum Rating")}
             >
-              <MenuItem value="">Any Rating</MenuItem>
-              <MenuItem value={1}>1+ Stars</MenuItem>
-              <MenuItem value={2}>2+ Stars</MenuItem>
-              <MenuItem value={3}>3+ Stars</MenuItem>
-              <MenuItem value={4}>4+ Stars</MenuItem>
-              <MenuItem value={5}>5 Stars</MenuItem>
+              <MenuItem value="">{t("Any Rating")}</MenuItem>
+              <MenuItem value={1}>{t("1+ Stars")}</MenuItem>
+              <MenuItem value={2}>{t("2+ Stars")}</MenuItem>
+              <MenuItem value={3}>{t("3+ Stars")}</MenuItem>
+              <MenuItem value={4}>{t("4+ Stars")}</MenuItem>
+              <MenuItem value={5}>{t("5 Stars")}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>
@@ -391,24 +393,24 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Target Audience
+            {t("Target Audience")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Target Audience</InputLabel>
+            <InputLabel>{t("Target Audience")}</InputLabel>
             <Select
               value={localFilters.target_audience_id || ""}
               onChange={(e) =>
                 handleInputChange("target_audience_id", e.target.value)
               }
-              label="Target Audience"
+              label={t("Target Audience")}
             >
-              <MenuItem value="">All Audiences</MenuItem>
-              <MenuItem value={1}>Beginners</MenuItem>
-              <MenuItem value={2}>Intermediate</MenuItem>
-              <MenuItem value={3}>Advanced</MenuItem>
-              <MenuItem value={4}>Professionals</MenuItem>
+              <MenuItem value="">{t("All Audiences")}</MenuItem>
+              <MenuItem value={1}>{t("Beginners")}</MenuItem>
+              <MenuItem value={2}>{t("Intermediate")}</MenuItem>
+              <MenuItem value={3}>{t("Advanced")}</MenuItem>
+              <MenuItem value={4}>{t("Professionals")}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>
@@ -418,7 +420,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Course Type
+            {t("Course Type")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
@@ -432,7 +434,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                   }
                 />
               }
-              label="Free Courses"
+              label={t("Free Courses")}
             />
             <FormControlLabel
               control={
@@ -443,7 +445,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                   }
                 />
               }
-              label="Paid Courses"
+              label={t("Paid Courses")}
             />
           </FormGroup>
         </AccordionDetails>
@@ -453,22 +455,22 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Course Level
+            {t("Course Level")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <FormControl fullWidth size="small">
-            <InputLabel>Course Level</InputLabel>
+            <InputLabel>{t("Course Level")}</InputLabel>
             <Select
               value={localFilters.level_id || ""}
               onChange={(e) => handleInputChange("level_id", e.target.value)}
-              label="Course Level"
+              label={t("Course Level")}
             >
-              <MenuItem value="">All Levels</MenuItem>
-              <MenuItem value={0}>Beginner</MenuItem>
-              <MenuItem value={1}>Intermediate</MenuItem>
-              <MenuItem value={2}>Advanced</MenuItem>
-              <MenuItem value={3}>Expert</MenuItem>
+              <MenuItem value="">{t("All Levels")}</MenuItem>
+              <MenuItem value={0}>{t("level.beginner")}</MenuItem>
+              <MenuItem value={1}>{t("level.intermediate")}</MenuItem>
+              <MenuItem value={2}>{t("level.advanced")}</MenuItem>
+              <MenuItem value={3}>{t("level.expert")}</MenuItem>
             </Select>
           </FormControl>
         </AccordionDetails>
@@ -478,13 +480,13 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Specific Rating
+            {t("Specific Rating")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Box>
             <Typography variant="body2" color="textSecondary" gutterBottom>
-              Select exact rating
+              {t("Select exact rating")}
             </Typography>
             <Rating
               value={localFilters.rating || 0}
@@ -499,7 +501,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                 onClick={() => handleInputChange("rating", undefined)}
                 sx={{ mt: 1 }}
               >
-                Clear Rating
+                {t("Clear Rating")}
               </Button>
             )}
           </Box>
@@ -510,7 +512,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Typography variant="subtitle1" fontWeight={600}>
-            Course Creation Date
+            {t("Course Creation Date")}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
@@ -524,7 +526,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                   }
                 />
               }
-              label="Created This Week"
+              label={t("Created This Week")}
             />
             <FormControlLabel
               control={
@@ -535,7 +537,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                   }
                 />
               }
-              label="Created This Month"
+              label={t("Created This Month")}
             />
             <FormControlLabel
               control={
@@ -546,7 +548,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
                   }
                 />
               }
-              label="Created This Year"
+              label={t("Created This Year")}
             />
           </FormGroup>
         </AccordionDetails>
@@ -560,7 +562,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
           fullWidth
           startIcon={<FilterList />}
         >
-          Apply Filters
+          {t("Apply Filters")}
         </Button>
         <Button
           variant="outlined"
@@ -568,7 +570,7 @@ export const CoursesFilter: React.FC<CoursesFilterProps> = ({
           fullWidth
           startIcon={<Clear />}
         >
-          Clear All
+          {t("Clear All")}
         </Button>
       </Box>
     </Drawer>

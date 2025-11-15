@@ -96,7 +96,7 @@ export const CourseIncludeCard = (props: Props) => {
         {props.isOffline && (
           <IncludedRow
             isDisplayBorder
-            title="Watch Offline"
+            title={t("watch")}
             icon={<VideocamOutlinedIcon sx={{ color: "#1E5B63" }} />}
           />
         )}
