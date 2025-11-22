@@ -56,7 +56,7 @@ export const CourseCard = (props: Props) => {
     return undefined;
   }, [props.discount]);
 
-  const courseUrl = navigateTo || `courses/${id}`;
+  const courseUrl = navigateTo || `courses/${id}/student-details`;
   const isFourInfoDisplayed = !!hours && !!lessonCount && !!level && !!type;
 
   return (
