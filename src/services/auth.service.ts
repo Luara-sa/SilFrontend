@@ -10,9 +10,11 @@ import { ApiUtils } from "utils/apiUtils";
 
 const { NEXT_APP_TOKEN_KEY } = process.env;
 
-class AuthService {
-  private static _instance: AuthService;
-  private logoutCallbacks: (() => void)[] = [];
+  class AuthService {
+    private static _instance: AuthService;
+    private logoutCallbacks: (() => void)[] = [];
+    private readonly SESSION_STARTED_AT_KEY = 'auth_session_started_at';
+  public static readonly DEFAULT_SESSION_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
 
   public static get Instance() {
     return this._instance || (this._instance = new this());
@@ -158,6 +160,12 @@ class AuthService {
   isLoggedIn(): boolean {
     const token = this.getJwtToken();
     if (!token) return false;
+
+    if (this.isSessionExpired()) {
+      console.warn('Session max age reached, logging out...');
+      this.doLogout();
+      return false;
+    }
     
     // Validate token format
     if (!JwtUtils.isValidTokenFormat(token)) {
@@ -270,6 +278,7 @@ class AuthService {
     }
     
     await this.storeTokens(token);
+    this.markSessionStart();
     console.log('Token stored in AuthService:', !!this.getJwtToken());
   }
 
@@ -343,6 +352,7 @@ class AuthService {
 
   private destroyTokens() {
     localStorage.removeItem(NEXT_APP_TOKEN_KEY ?? "token");
+    localStorage.removeItem(this.SESSION_STARTED_AT_KEY);
     // Clear user data from localStorage
     localStorage.removeItem('user_data');
     
@@ -442,6 +452,38 @@ class AuthService {
     } catch (error) {
       console.error("Error clearing user stores:", error);
     }
+  }
+
+  /**
+   * Track and validate session lifetime (front-end enforced)
+   */
+  private markSessionStart() {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(this.SESSION_STARTED_AT_KEY, Date.now().toString());
+  }
+
+  private getSessionStart(): number | null {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(this.SESSION_STARTED_AT_KEY);
+    if (!stored) return null;
+    const parsed = Number(stored);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  isSessionExpired(maxAgeMs: number = AuthService.DEFAULT_SESSION_MAX_AGE_MS): boolean {
+    if (maxAgeMs <= 0) return false;
+    const startedAt = this.getSessionStart();
+
+    // If we have no start time but a token exists, start the timer now.
+    if (!startedAt && this.getJwtToken()) {
+      this.markSessionStart();
+      return false;
+    }
+
+    if (!startedAt) return true;
+
+    const now = Date.now();
+    return now - startedAt >= maxAgeMs;
   }
 
   // New forgot password methods

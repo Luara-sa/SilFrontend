@@ -139,7 +139,7 @@ const ForgetPassword = () => {
                 </Box>
                 <Box>
                   <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                    Go to Home
+                    {t("goHome")}
                   </Typography>
                   <Button
                     onClick={() => router.push("/")}
@@ -157,7 +157,7 @@ const ForgetPassword = () => {
                       },
                     }}
                   >
-                    Get Started
+                    {t("getStarted")}
                   </Button>
                 </Box>
               </Box>

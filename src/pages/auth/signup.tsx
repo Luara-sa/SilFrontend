@@ -327,7 +327,7 @@ const Signup = () => {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                      Go to Home
+                      {t("goHome")}
                     </Typography>
                     <Button
                       onClick={() => router.push("/")}
@@ -341,11 +341,11 @@ const Signup = () => {
                         color: "primary.main",
                         px: "25px",
                         "&:hover": {
-                          backgroundColor: "#d8d8d8",
-                        },
-                      }}
-                    >
-                      Get Started
+                        backgroundColor: "#d8d8d8",
+                      },
+                    }}
+                  >
+                      {t("getStarted")}
                     </Button>
                   </Box>
                 </Box>
@@ -572,7 +572,7 @@ const Signup = () => {
                     boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
                   }}
                 >
-                  Sign Up
+                  {t("signUp")}
                 </ButtonLoader>
                 <Button
                   onClick={() => onGoogleAuth()}
@@ -605,9 +605,9 @@ const Signup = () => {
                   }}
                 >
                   <Typography variant="subtitle1" sx={{ color: "wood.main" }}>
-                    i have an account
+                    {t("haveAccount")}
                   </Typography>
-                  <Link href={"login"}>Login</Link>
+                  <Link href={"login"}>{t("Login")}</Link>
                 </Box>
               </Box>
             </Box>

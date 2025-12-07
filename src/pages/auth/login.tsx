@@ -406,7 +406,7 @@ const LoginPage: NextPage = () => {
               </Box>
               <Box>
                 <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                  Go to Home
+                  {t("goHome")}
                 </Typography>
                 <Button
                   onClick={() => router.push("/")}
@@ -423,7 +423,7 @@ const LoginPage: NextPage = () => {
                     },
                   }}
                 >
-                  Get Started
+                  {t("getStarted")}
                 </Button>
               </Box>
             </Box>
@@ -478,12 +478,12 @@ const LoginPage: NextPage = () => {
                     "& .Mui-selected": {
                       color: "primary.main",
                     },
-                  }}
-                >
-                  <Tab label="Student Login" />
-                  <Tab label="Company Login" />
-                </Tabs>
-              </Box>
+                    }}
+                  >
+                  <Tab label={t("studentLogin")} />
+                  <Tab label={t("companyLogin")} />
+                  </Tabs>
+                </Box>
 
               {/* Login Form */}
               <Box

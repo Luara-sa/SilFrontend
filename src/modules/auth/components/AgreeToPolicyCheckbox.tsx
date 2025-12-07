@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Box, Checkbox, Typography } from "@mui/material";
+import useTranslation from "next-translate/useTranslation";
 
 import { FieldValues, UseFormSetValue } from "react-hook-form";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export const AgreeToPolicyCheckbox = (props: Props) => {
+  const { t } = useTranslation("auth");
   const [open, setOpen] = useState(false);
 
   const [isTermAgreed, setIsTermAgreed] = useState(false);
@@ -57,7 +59,7 @@ export const AgreeToPolicyCheckbox = (props: Props) => {
             },
             marginRight: "5px",
           }}
-          label="I agree to the"
+          label={t("agreePrefix")}
           name="cat_ids"
           onChange={handleTermAgree}
           checked={isTermAgreed}
@@ -68,12 +70,12 @@ export const AgreeToPolicyCheckbox = (props: Props) => {
             sx={{
               color: "primary.main",
               fontWeight: "500",
-              fontSize: "14px",
-              borderBottom: "1px solid #1E5B63",
-              cursor: "pointer",
-            }}
-          >
-            Terms Privacy Policy
+            fontSize: "14px",
+            borderBottom: "1px solid #1E5B63",
+            cursor: "pointer",
+          }}
+        >
+            {t("termsPrivacyPolicy")}
           </Typography>
         </Box>
       </Box>
