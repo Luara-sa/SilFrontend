@@ -11,7 +11,6 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { OutlinedInputProps } from "@mui/material";
 import FormControl from "@mui/material/FormControl";
 import InputAdornment from "@mui/material/InputAdornment";
 import OutlinedInput from "@mui/material/OutlinedInput";
@@ -28,11 +27,9 @@ import { eventEmitter } from "services/eventEmitter";
 
 import { Seo } from "components/shared";
 import { TextFieldStyled } from "components/styled/TextFiled";
-import PasswordInput from "components/custom/PasswordInput";
 import ButtonLoader from "components/custom/ButtonLoader";
 import { LoginLayout } from "components/layout/login-layout/LoginLayout";
 
-import googleIcon from "/assets/icons/google-icon.svg";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
@@ -44,17 +41,18 @@ import { useGuestOnly } from "hooks/useProtectedRoute";
 
 const Login = () => {
   const { t } = useTranslation("auth");
-
   const router = useRouter();
   const theme = useTheme();
 
+  // مهم: استخدم الـ Auth مبكّراً
+  const { login } = useAuth();
+  const { isLoading: guestCheckLoading } = useGuestOnly();
+
   const setMe = meStore((state) => state.setMe);
-  const Device = useDeviceSize();
+  const deviceSize = useDeviceSize();
 
   const [loading, setLoading] = useState(false);
-  // Error state for the back error message
   const [error, setError] = useState<string>("");
-
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
 
   const validationSchema = Yup.object().shape({
@@ -66,121 +64,71 @@ const Login = () => {
   const { register, handleSubmit, formState } = useForm(formOptions);
   const { errors } = formState;
 
-  // I did that beacause we need to reset the (error) state when the user start typing
+  // نفصل onChange حتى نصفر error عند الكتابة
   const { onChange: onEmailChange, ...emailRegister } = register("email");
-  const { onChange: onPasswordChange, ...passwordRegister } =
-    register("password");
+  const { onChange: onPasswordChange, ...passwordRegister } = register("password");
 
-  const DeviceSize = useDeviceSize();
+  function redirectToVerify(email: string, verify_email_token?: string) {
+    if (verify_email_token) {
+      localStorage.setItem("verify_email_token", verify_email_token);
+    }
+    localStorage.setItem("verification_email", email);
+
+    eventEmitter.emit("enqueueSnackbar", {
+      message: "رجاءً فعِّل بريدك الإلكتروني لإكمال تسجيل الدخول.",
+      variant: "info",
+      autoHideDuration: 3000,
+      preventDuplicate: true,
+    });
+
+    router.push(`/auth/verfiy-account/${encodeURIComponent(email)}`);
+  }
 
   function LoginHandler(input: any) {
     setLoading(true);
     setError("");
-    console.log("Starting login process...");
 
     _AuthService
       .login(input)
       .then((res) => {
-        console.log("Login response received:", res.data);
-
-        // Handle new response structure: { status: true, message: "...", data: { profile: {...}, token: "..." } }
         const responseData = res.data as any;
 
-        if (!responseData.status) {
-          throw new Error(responseData.message || "Login failed");
+        if (!responseData?.status) {
+          throw new Error(responseData?.message || "Login failed");
         }
 
-        const { profile, token, verify_email_token } = responseData.data;
+        const { profile, token, verify_email_token } = responseData.data || {};
+
+        // ممنوع تسجيل الدخول إن لم يكن مفعلاً
+        if (!profile?.is_verify) {
+          redirectToVerify(profile?.email, verify_email_token);
+          return; // بدون login وبدون تخزين token
+        }
 
         if (!token) {
           throw new Error("No token received from server");
         }
 
-        console.log("Token received:", token);
-        console.log("Profile received:", profile);
-        console.log("Verify email token:", verify_email_token);
-
-        // Check if user email is verified
-        if (profile.is_verify === 0 || profile.is_verify === false) {
-          console.log(
-            "User email not verified, redirecting to verification page"
-          );
-
-          // Store user data and token even for unverified users (they'll need it after verification)
-          const userData = {
-            user: profile,
-            token: token,
-            role: ["student"],
-            info_system: {
-              english_level_enum: [],
-              document_type_enum: {},
-              vat_value: { vat: 0 },
-            },
-          };
-
-          // Store user data and token for after verification
-          login(userData.token, userData);
-
-          // Store verify_email_token for verification process
-          if (verify_email_token) {
-            localStorage.setItem("verify_email_token", verify_email_token);
-          }
-
-          // Store user email for verification page
-          localStorage.setItem("verification_email", profile.email);
-
-          // Redirect to verification page
-          router.push(
-            `/auth/verfiy-account/${encodeURIComponent(profile.email)}`
-          );
-          return;
-        }
-
         const userData = {
           user: profile,
           token: token,
-          role: ["student"], // Default role for now
+          role: ["student"],
           info_system: {
-            // Mock info_system structure to prevent loading state
             english_level_enum: [],
             document_type_enum: {},
             vat_value: { vat: 0 },
           },
         };
 
-        console.log("Calling auth context login with userData:", userData);
+        // فقط هنا نسجّل الدخول فعلياً
+        login(userData.token, userData);
 
-        // Use the auth context login method instead of direct store manipulation
-        try {
-          login(userData.token, userData);
-          console.log("Auth context login completed successfully");
-        } catch (loginError) {
-          console.error("Auth context login failed:", loginError);
-          throw loginError;
-        }
-
-        // Verify token storage
-        console.log(
-          "Login successful - Token stored:",
-          !!localStorage.getItem("token")
-        );
-        console.log("User data stored:", !!localStorage.getItem("user_data"));
-        console.log("Auth service token check:", !!_AuthService.getJwtToken());
-
-        // Fetch updated student profile data after successful login
+        // تحديث بروفايل الطالب إن لزم
         if (userData.role?.includes("student")) {
           _AuthService
             .fetchAndUpdateStudentProfile(meStore)
-            .then((updatedUser) => {
-              if (updatedUser) {
-                console.log("Student profile updated successfully");
-              }
-            })
             .catch((err) => {
-              console.warn(
-                "Failed to update student profile after login:",
-                err
-              );
+              console.warn("Failed to update student profile after login:", err);
             });
         }
 
@@ -191,38 +139,24 @@ const Login = () => {
           preventDuplicate: true,
         });
 
-        // Primary approach: Let useGuestOnly hook handle the redirect
-        console.log(
-          "Login successful - useGuestOnly hook should handle redirect"
-        );
-
-        // Fallback: If useGuestOnly doesn't redirect within 500ms, do manual redirect
+        // نعتمد على useGuestOnly للتحويل، مع Fallback سريع
         const redirectTimeout = setTimeout(() => {
-          console.log(
-            "Fallback redirect triggered - useGuestOnly hook didn't redirect in time"
-          );
           const returnUrl = router.query.returnUrl as string;
           const redirectTarget =
             returnUrl && returnUrl !== "/" && returnUrl !== "/auth/login"
               ? returnUrl
               : "/";
-          console.log("Fallback redirecting to:", redirectTarget);
           router.push(redirectTarget);
         }, 500);
 
-        // Clear the timeout if the component unmounts (redirect happened)
         const cleanup = () => clearTimeout(redirectTimeout);
         router.events.on("routeChangeStart", cleanup);
-
-        // Also clear it after a reasonable time
         setTimeout(() => {
           router.events.off("routeChangeStart", cleanup);
           clearTimeout(redirectTimeout);
         }, 1000);
       })
       .catch((err) => {
-        console.error("Login error:", err);
-
         if (err) {
           if (
             err?.response?.data?.message === "error_email_or_password" ||
@@ -230,7 +164,8 @@ const Login = () => {
           ) {
             setError(t("error email or passowrd"));
           } else if (err?.response?.data?.message === "activate_account") {
-            router.push(`/auth/verfiy-account/${input?.email}`);
+            // بدون login وبلا token
+            redirectToVerify(input?.email);
           } else {
             const errorMessage =
               err?.response?.data?.message || err.message || "Login failed";
@@ -241,23 +176,13 @@ const Login = () => {
       .finally(() => setLoading(false));
   }
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleMouseDownPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const handleClickShowPassword = () => setShowPassword((s) => !s);
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
 
-  // Use guest-only hook to redirect authenticated users
-  const { isLoading: guestCheckLoading } = useGuestOnly();
-  const { login } = useAuth();
-
   useLayoutEffect(() => {
-    // This check is now handled by useGuestOnly hook
-    // _AuthService.isLoggedIn() && router.push("/");
+    // check handled by useGuestOnly
   }, []);
 
   const onGoogleAuth = useGoogleLogin({
@@ -268,14 +193,22 @@ const Login = () => {
           provider: "google",
         })
         .then((res) => {
-          // Handle new response structure: { status: true, data: { profile: {...}, token: "..." } }
           const responseData = res.data as any;
-
-          if (!responseData.status) {
-            throw new Error(responseData.message || "Social login failed");
+          if (!responseData?.status) {
+            throw new Error(responseData?.message || "Social login failed");
           }
 
-          const { profile, token } = responseData.data;
+          const { profile, token, verify_email_token } = responseData.data || {};
+
+          // نفس شرط التفعيل
+          if (!profile?.is_verify) {
+            redirectToVerify(profile?.email, verify_email_token);
+            return; // لا login
+          }
+
+          if (!token) {
+            throw new Error("No token received from server");
+          }
 
           const userData = {
             user: profile,
@@ -288,28 +221,15 @@ const Login = () => {
             },
           };
 
-          // Use the auth context login method
+          // فقط لو مفعّل
           login(userData.token, userData);
 
-          // Save user data to localStorage for persistence (backup)
+          // كنسل التخزين الاحتياطي للمستخدم غير المفعّل
           localStorage.setItem("user_data", JSON.stringify(userData));
 
-          // Verify token storage
-          console.log(
-            "Social login successful - Token stored:",
-            !!localStorage.getItem("token")
-          );
-          console.log("User data stored:", !!localStorage.getItem("user_data"));
-
-          // Fetch updated student profile data after successful social login
           if (userData.role?.includes("student")) {
             _AuthService
               .fetchAndUpdateStudentProfile(meStore)
-              .then((updatedUser) => {
-                if (updatedUser) {
-                  // Profile updated successfully
-                }
-              })
               .catch((err) => {
                 console.warn(
                   "Failed to update student profile after social login:",
@@ -318,7 +238,6 @@ const Login = () => {
               });
           }
 
-          // Handle redirect after login
           const returnUrl = router.query.returnUrl as string;
           if (returnUrl && returnUrl !== "/") {
             router.push(returnUrl);
@@ -326,9 +245,19 @@ const Login = () => {
             router.push("/");
           }
         })
-        .catch((err) => console.error("Social login error:", err));
+        .catch((err) => {
+          console.error("Social login error:", err);
+          eventEmitter.emit("enqueueSnackbar", {
+            message: "Something went wrong, please check you internet conection",
+            variant: "error",
+            snack: {
+              autoHideDuration: 3000,
+              preventDuplicate: true,
+            },
+          });
+        });
     },
-    onError: (error) => {
+    onError: () => {
       eventEmitter.emit("enqueueSnackbar", {
         message: "Something went wrong, please check you internet conection",
         variant: "error",
@@ -377,7 +306,7 @@ const Login = () => {
               my: "20px",
             }}
           >
-            {DeviceSize !== "mobile" && (
+            {deviceSize !== "mobile" && (
               <Box
                 sx={{
                   backgroundImage:
@@ -409,7 +338,6 @@ const Login = () => {
                       sx={{
                         color: "gray.active",
                         fontWeight: "700",
-                        //  mt: "20vh"
                       }}
                     >
                       {t("lorem")}
@@ -427,7 +355,7 @@ const Login = () => {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                      Go to Home
+                      {t("goHome")}
                     </Typography>
                     <Button
                       onClick={() => router.push("/")}
@@ -445,7 +373,7 @@ const Login = () => {
                         },
                       }}
                     >
-                      Get Started
+                      {t("getStarted")}
                     </Button>
                   </Box>
                 </Box>
@@ -615,7 +543,7 @@ const Login = () => {
                   }}
                 >
                   <Link href={"signup"}>{t("create new account")}</Link>
-                  <Link href={"/company/login"}>Company Login →</Link>
+                  <Link href={"/company/login"}>{t("companyLogin")} →</Link>
                 </Box>
               </Box>
             </Box>

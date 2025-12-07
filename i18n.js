@@ -8,6 +8,7 @@ module.exports = {
     "/auth/login": ["auth"],
     "/auth/signup": ["auth"],
     "/auth/forget-password": ["auth"],
+    "/auth/verfiy-account/[email]": ["auth"],
     "/contact-us": ["contact"],
   },
 };

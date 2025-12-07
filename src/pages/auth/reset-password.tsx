@@ -158,7 +158,7 @@ const ResetPassword = () => {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                      Go to Home
+                      {t("goHome")}
                     </Typography>
                     <Button
                       onClick={() => router.push("/")}
@@ -172,11 +172,11 @@ const ResetPassword = () => {
                         color: "primary.main",
                         px: "25px",
                         "&:hover": {
-                          backgroundColor: "#d8d8d8",
-                        },
-                      }}
-                    >
-                      Get Started
+                        backgroundColor: "#d8d8d8",
+                      },
+                    }}
+                  >
+                      {t("getStarted")}
                     </Button>
                   </Box>
                 </Box>

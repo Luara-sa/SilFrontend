@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "contexts/AuthContext";
 import Link from "next/link";
@@ -82,7 +82,7 @@ const AuthIndexPage: React.FC = () => {
                 textTransform: "none",
               }}
             >
-              Student Login
+              {t("studentLogin")}
             </Button>
 
             <Button
@@ -102,7 +102,7 @@ const AuthIndexPage: React.FC = () => {
                 },
               }}
             >
-              Company Login
+              {t("companyLogin")}
             </Button>
           </Box>
 

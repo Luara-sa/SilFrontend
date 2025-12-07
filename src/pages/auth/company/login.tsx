@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 import useTranslation from "next-translate/useTranslation";
@@ -165,7 +165,7 @@ const CompanyLogin = () => {
 
   return (
     <>
-      <Seo title="SIL | Company Login" />
+      <Seo title={`SIL | ${t("companyLogin")}`} />
       <LoginLayout>
         <Box
           sx={{
@@ -185,7 +185,7 @@ const CompanyLogin = () => {
                 mb: 1,
               }}
             >
-              Company Login
+              {t("companyLogin")}
             </Typography>
             <Typography
               sx={{
@@ -358,7 +358,7 @@ const CompanyLogin = () => {
                         },
                       }}
                     >
-                      Student Login →
+                                        {t("studentLogin")}
                     </Typography>
                   </Link>
                 </Box>

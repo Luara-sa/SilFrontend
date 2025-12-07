@@ -77,6 +77,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const expiringSoon = _AuthService.willTokenExpireSoon(300);
       setWillExpireSoon(expiringSoon);
 
+      // Enforce max session age (even if token is still valid)
+      if (_AuthService.isSessionExpired()) {
+        console.warn("Session expired based on max age");
+        logout();
+        return false;
+      }
+
       // Get user data from store
       const meData = meStore.getState().me;
       if (meData?.user) {
@@ -195,6 +202,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const token = _AuthService.getJwtToken();
 
       if (!token) {
+        logout();
+        return;
+      }
+
+      if (_AuthService.isSessionExpired()) {
+        console.warn("Session expired during monitoring");
         logout();
         return;
       }

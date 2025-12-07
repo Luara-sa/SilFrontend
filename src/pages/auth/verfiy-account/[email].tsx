@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import useTranslation from "next-translate/useTranslation";
 
 import { _AuthService } from "services/auth.service";
 import { eventEmitter } from "services/eventEmitter";
@@ -22,6 +23,7 @@ import { Timer } from "modules/courses/components/courses-filter/components/Time
 
 const VerfiyAccount = () => {
   const router = useRouter();
+  const { t } = useTranslation("auth");
 
   const setMe = meStore((state) => state.setMe);
 
@@ -57,7 +59,7 @@ const VerfiyAccount = () => {
   function SubmitHandler(input: any) {
     if (!verifyEmailToken) {
       eventEmitter.emit("enqueueSnackbar", {
-        message: "Verification token not found. Please try logging in again.",
+        message: t("verificationTokenMissing"),
         snack: {
           variant: "error",
           autoHideDuration: 3000,
@@ -97,7 +99,7 @@ const VerfiyAccount = () => {
         localStorage.removeItem("verification_email");
 
         eventEmitter.emit("enqueueSnackbar", {
-          message: "Email verified successfully!",
+          message: t("verificationSuccess"),
           variant: "success",
           autoHideDuration: 3000,
           preventDuplicate: true,
@@ -116,7 +118,7 @@ const VerfiyAccount = () => {
         console.error("Email verification error:", err);
         const errorMessage =
           err?.response?.data?.message ||
-          "Verification failed. Please try again.";
+          t("verificationFailed");
         eventEmitter.emit("enqueueSnackbar", {
           message: errorMessage,
           snack: {
@@ -132,7 +134,7 @@ const VerfiyAccount = () => {
   const handleResendCode = () => {
     if (!email) {
       eventEmitter.emit("enqueueSnackbar", {
-        message: "Email not found. Please try again.",
+        message: t("emailNotFound"),
         snack: {
           variant: "error",
           autoHideDuration: 3000,
@@ -148,7 +150,7 @@ const VerfiyAccount = () => {
       .then((res) => {
         console.log("Resend verification code response:", res);
         eventEmitter.emit("enqueueSnackbar", {
-          message: "Verification code sent successfully!",
+          message: t("verificationCodeSent"),
           snack: {
             variant: "success",
             autoHideDuration: 3000,
@@ -160,7 +162,7 @@ const VerfiyAccount = () => {
         console.error("Resend verification code error:", err);
         const errorMessage =
           err?.response?.data?.message ||
-          "Failed to resend code. Please try again.";
+          t("verificationCodeSendFailed");
         eventEmitter.emit("enqueueSnackbar", {
           message: errorMessage,
           snack: {
@@ -175,7 +177,7 @@ const VerfiyAccount = () => {
 
   return (
     <>
-      <Seo title="SIL | Forget Password" />
+      <Seo title={`SIL | ${t("verifyPageTitle")}`} />
       <Box
         sx={{
           minHeight: "100vh",
@@ -237,10 +239,10 @@ const VerfiyAccount = () => {
                       variant="h1"
                       sx={{ color: "gray.active", fontWeight: "700" }}
                     >
-                      Verify Your Account
+                      {t("verifyAccountHeading")}
                     </Typography>
                     <Typography sx={{ color: "wood.main", fontSize: "16px" }}>
-                      Registration confirmation
+                      {t("verifyAccountSubtitle")}
                     </Typography>
                   </Box>
 
@@ -252,7 +254,7 @@ const VerfiyAccount = () => {
                       //  mt: "20vh"
                     }}
                   >
-                    Verify Your Account
+                    {t("verifyAccountHeading")}
                   </Typography>
 
                   <Typography
@@ -262,13 +264,11 @@ const VerfiyAccount = () => {
                       //  mt: "5vh"
                     }}
                   >
-                    We&apos;ve sent a verification code to your email address.
-                    Please enter the code below to activate your account and
-                    start learning.
+                    {t("verifyAccountDescription")}
                   </Typography>
                   <Box>
                     <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                      Go to Home
+                      {t("goHome")}
                     </Typography>
                     <Button
                       onClick={() => router.push("/")}
@@ -286,7 +286,7 @@ const VerfiyAccount = () => {
                         },
                       }}
                     >
-                      Get Started
+                      {t("getStarted")}
                     </Button>
                   </Box>
                 </Box>
@@ -322,7 +322,7 @@ const VerfiyAccount = () => {
                     variant="subtitle1"
                     sx={{ color: "primary.main" }}
                   >
-                    Verify YOUR EMAIL ADDRESS:
+                    {t("verifyEmailAddressLabel")}
                   </Typography>
                   <Typography
                     sx={{
@@ -365,8 +365,7 @@ const VerfiyAccount = () => {
                     lineHeight: "20px",
                   }}
                 >
-                  We&apos;ll send you an email with a verification number to
-                  confirm your account
+                  {t("verifyAccountInfo")}
                 </Typography>
               </Box>
 
@@ -385,7 +384,7 @@ const VerfiyAccount = () => {
                     boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
                   }}
                 >
-                  Verify
+                  {t("verifyButton")}
                 </ButtonLoader>
 
                 {resendCode === true && (
