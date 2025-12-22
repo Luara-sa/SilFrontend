@@ -76,7 +76,8 @@ export const CourseCard = (props: Props) => {
         },
         width: "100%",
         maxWidth: { xs: "100%", sm: 300 },
-        minHeight: { xs: 420, sm: 460 },
+         minHeight: "unset",
+
       }}
     >
       {/* Media */}
@@ -137,7 +138,6 @@ export const CourseCard = (props: Props) => {
           px: { xs: 1.5, sm: 2 },
           pt: 1.75,
           pb: 2,
-          minHeight: { xs: 240, sm: 260 },
           flex: 1,
         }}
       >
@@ -205,46 +205,16 @@ export const CourseCard = (props: Props) => {
         {/* Meta */}
         <Box sx={{ pt: 0.5 }}>
           <SmallCourseInfoSlider
-            hours={hours}
+            // hours={hours}
             level={level}
             type={type}
-            lessonCount={lessonCount}
+            // lessonCount={lessonCount}
             isFourInfoDisplyed={isFourInfoDisplayed}
           />
         </Box>
 
         {/* Footer */}
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ mt: "auto", pt: 0.5 }}
-          spacing={1.25}
-        >
-          <Link href={courseUrl}>
-            <Button
-              variant="contained"
-              size="small"
-              sx={{
-                borderRadius: 2,
-                px: 1.75,
-                fontSize: 13,
-                textTransform: "none",
-                boxShadow: "none",
-              }}
-            >
-              {isEnrolled || props.price > 0 ? t("View Course") : t("Enroll")}
-            </Button>
-          </Link>
-
-          <CoursePrice
-            price={props.price}
-            disable={hasPricingTag}
-            originalPrice={originalPrice}
-            discountedPrice={discountedPrice}
-            currency={currency}
-          />
-        </Stack>
+    
       </Stack>
     </Box>
   );

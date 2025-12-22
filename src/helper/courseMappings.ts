@@ -4,9 +4,9 @@
 export type CourseMode = 'hybrid' | 'online' | 'location';
 
 const COURSE_MODE_TRANSLATIONS: Record<CourseMode, { en: string; ar: string }> = {
-  hybrid: { en: 'Hybrid', ar: 'هجين' },
-  online: { en: 'Online', ar: 'أونلاين' },
-  location: { en: 'In-Person', ar: 'حضوري' },
+  hybrid: { en: 'Hybrid', ar: 'مدمج' },
+  online: { en: 'Online', ar: 'عن بعد' },
+  location: { en: 'OnSite', ar: 'حضوري' },
 };
 
 /**

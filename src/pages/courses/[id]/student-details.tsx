@@ -430,7 +430,7 @@ const StudentCourseDetailsPage = () => {
               <Grid item xs={12} md={4}>
                 {/* Price Card */}
                 <Card variant="outlined" sx={{ p: 3, textAlign: "center" }}>
-                  <Box sx={{ mb: 2 }}>
+                  {/* <Box sx={{ mb: 2 }}>
                     {getDisplayPrice().isFree ? (
                       <Typography
                         variant="h3"
@@ -455,7 +455,7 @@ const StudentCourseDetailsPage = () => {
                         )}
                       </Box>
                     )}
-                  </Box>
+                  </Box> */}
 
                   {/* Show different content based on enrollment status */}
                   {statusLoading ? (
@@ -852,7 +852,7 @@ const StudentCourseDetailsPage = () => {
           {/* Course Information */}
           <Grid item xs={12} md={8}>
             <Card sx={{ mb: 3 }}>
-              <CardContent>
+              {/* <CardContent>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
                   {t("Course Information")}
                 </Typography>
@@ -965,7 +965,7 @@ const StudentCourseDetailsPage = () => {
                     </Grid>
                   )}
                 </Grid>
-              </CardContent>
+              </CardContent> */}
             </Card>
 
             {/* Category Information */}
