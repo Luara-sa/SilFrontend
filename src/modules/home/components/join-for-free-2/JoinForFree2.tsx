@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 import { Box, Button, Typography, useTheme } from "@mui/material";
 import useTranslation from "next-translate/useTranslation";
+import { PlacementTestConditionalPopup } from "components/layout/header/placement-test/PlacementTestConditionalPopup";
 
 export const JoinForFree2 = () => {
   const theme = useTheme();
   const { t } = useTranslation("home");
+  const [open, setOpen] = useState(false);
+  const handleClose = () => setOpen(false);
+  const handleOpen = () => setOpen(true);
   return (
     <Box
       sx={{
@@ -44,6 +48,7 @@ export const JoinForFree2 = () => {
             {t("join")}
           </Typography>
           <Button
+            onClick={handleOpen}
             variant="contained"
             color="warning"
             sx={{ mt: { xs: "20px", md: "35px" }, color: "primary.main" }}
@@ -58,6 +63,7 @@ export const JoinForFree2 = () => {
               {t("join for free")}
             </Typography>
           </Button>
+          <PlacementTestConditionalPopup handleClose={handleClose} open={open} />
         </Box>
         <Box
           sx={{

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 
 import { _CourseService } from "services/course.service";
 import { _PathService } from "services/path.service";
@@ -70,6 +71,30 @@ export const HomeIndex = () => {
         <JoinForFree2 />
         {/* <SuperiorSection /> */}
         <GetInTouch />
+
+        <IconButton
+          component="a"
+          href="https://wa.me/966553140808"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WhatsApp"
+          sx={{
+            position: "fixed",
+            right: { xs: 16, md: 24 },
+            bottom: { xs: 16, md: 24 },
+            zIndex: 1300,
+            width: 56,
+            height: 56,
+            color: "#fff",
+            backgroundColor: "#25D366",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+            "&:hover": {
+              backgroundColor: "#1ebe5d",
+            },
+          }}
+        >
+          <WhatsAppIcon />
+        </IconButton>
       </Box>
     </>
   );
