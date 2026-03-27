@@ -31,10 +31,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client1.svg"
+              src="/assets/clients/client7.png"
               layout="fill"
               objectFit="contain"
-              alt="client 1"
+              alt="client 7"
             />
           </Box>
           <Box
@@ -45,10 +45,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client2.svg"
+              src="/assets/clients/client8.png"
               layout="fill"
               objectFit="contain"
-              alt="client 2"
+              alt="client 8"
             />
           </Box>
           <Box
@@ -59,10 +59,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client3.svg"
+              src="/assets/clients/client9.png"
               layout="fill"
               objectFit="contain"
-              alt="client 3"
+              alt="client 9"
             />
           </Box>
           <Box
@@ -73,10 +73,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client4.svg"
+              src="/assets/clients/client10.png"
               layout="fill"
               objectFit="contain"
-              alt="client 4"
+              alt="client 10"
             />
           </Box>
           <Box
@@ -87,10 +87,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client5.svg"
+              src="/assets/clients/client11.png"
               layout="fill"
               objectFit="contain"
-              alt="client 5"
+              alt="client 11"
             />
           </Box>
           <Box
@@ -101,10 +101,10 @@ export const ClientSection = () => {
             }}
           >
             <Image
-              src="/assets/clients/client6.svg"
+              src="/assets/clients/client12.png"
               layout="fill"
               objectFit="contain"
-              alt="client 6"
+              alt="client 12"
             />
           </Box>
         </Box>

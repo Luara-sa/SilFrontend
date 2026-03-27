@@ -405,10 +405,20 @@ const LoginPage: NextPage = () => {
                 </Typography>
               </Box>
               <Box>
-                <Typography sx={{ fontSize: "14px", color: "gray.active" }}>
-                  {t("goHome")}
-                </Typography>
+                <Link href="/" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      fontSize: "14px",
+                      color: "gray.active",
+                      cursor: "pointer",
+                      "&:hover": { textDecoration: "underline" },
+                    }}
+                  >
+                    {t("goHome")}
+                  </Typography>
+                </Link>
                 <Button
+                  type="button"
                   onClick={() => router.push("/")}
                   variant="contained"
                   sx={{
