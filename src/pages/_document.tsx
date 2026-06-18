@@ -25,6 +25,15 @@ export default class MyDocument extends Document {
         >
           <Main />
           <NextScript />
+          {/* NELC Entity Verification Badge */}
+          <iframe
+            src="https://services.futurex.sa/entity-badge?code=x0S8cqQmYgjLYdXZ"
+            width="250"
+            height="60"
+            referrerPolicy="unsafe-url"
+            style={{ border: "none" }}
+            title="NELC Verified Entity"
+          />
         </body>
       </Html>
     );
